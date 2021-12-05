@@ -13,8 +13,10 @@ class AddonPreference(bpy.types.AddonPreferences):
         layout.prop(self, "def_res")
         
         
-#   TODO 添加顶点组
+#   添加顶点组
 #   在编辑模式整体失效
+#   TODO 设置活动项为晶格父级 -编辑模式
+#   TODO 设置活动项为其它选中物体父级 -编辑模式 多物体
 
 class Operator(bpy.types.Operator):
     bl_idname = "lthp.op"
@@ -143,11 +145,15 @@ class Operator(bpy.types.Operator):
         # bpy.context.view_layer.objects.active = D.objects['Suzanne.001']
 
 
-    def parent_set(self, child: bpy.types.Object, parent: bpy.types.Object):
+    def parent_set(self, child: bpy.types.Object, parent: bpy.types.Object,reverse = False):
         bpy.context.view_layer.update()
-        child.parent = parent
-        child.matrix_parent_inverse = parent.matrix_world.inverted()
-
+        if reverse:
+            parent.parent = child
+            parent.matrix_parent_inverse = child.matrix_world.inverted()
+        else:
+            child.parent = parent
+            child.matrix_parent_inverse = parent.matrix_world.inverted()
+            
     def execute(self, context):
         box = [[inf, -inf] for i in range(3)]
         support_type = ["MESH", "CURVE", "FONT", "SURFACE"]
@@ -178,7 +184,7 @@ class Operator(bpy.types.Operator):
                 selected_objects = bpy.context.selected_objects[:]
                 for so in selected_objects:
                     if so.type in support_type:
-                        self.parent_set(so, lpo)
+                        self.parent_set(so, lpo,reverse=context.mode == "EDIT_MESH")
             if context.mode == "EDIT_MESH":
                 vg_name = o.name + 'LP'
                 self.new_vg(obj=o)
@@ -226,7 +232,7 @@ class Operator(bpy.types.Operator):
                 bpy.context.collection.objects.link(lpo)
                 lt.points_u, lt.points_v, lt.points_w = self.res
                 if self.set_parent:
-                    self.parent_set(o, lpo)
+                    self.parent_set(o, lpo,reverse=context.mode == "EDIT_MESH")
                     
                     
                 if context.mode == "EDIT_MESH":

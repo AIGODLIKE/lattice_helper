@@ -12,8 +12,11 @@ class LATTICE_H_MT_Menus(bpy.types.Menu):
 
 def menu_func(self, context):
     # self.layout.menu('LATTICE_H_MT_Menus')
-    self.layout.column().operator(Operator.bl_idname)
-    self.layout.separator()
+    if len(context.selected_objects)>=2 and context.mode == "EDIT_MESH":
+        pass
+    else:
+        self.layout.column().operator(Operator.bl_idname)
+        self.layout.separator()
 
 
 def menu_register():

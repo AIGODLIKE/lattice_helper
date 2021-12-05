@@ -57,6 +57,8 @@ class Operator(bpy.types.Operator):
         self.res[:] = bpy.context.preferences.addons[__package__].preferences.def_res
         self.lerp = bpy.context.preferences.addons[__package__].preferences.lerp
         self.data = {}
+        if bpy.context.mode == "EDIT_MESH":
+            self.action=True
 
     def min_max_calc(self, vertices, mat, box, gtv=None):
         if not gtv:
@@ -172,9 +174,18 @@ class Operator(bpy.types.Operator):
     def execute(self, context):
         box = [[inf, -inf] for i in range(3)]
         support_type = ["MESH", "CURVE", "FONT", "SURFACE"]
-        active_object = bpy.context.active_object
+        active_object = context.active_object
+        
+        for o in context.selected_objects:
+        #     if self.axis == "Local" and context.mode != "EDIT_MESH":
+        #         self.axis = "Global"
+        
+            if o.type not in support_type:
+                self.report({"ERROR"}, f"物体{o.name}类型:{o.type}不支持！")
+                return {"FINISHED"}
+
         if self.action:#物体模式 and bpy.context.mode != "EDIT_MESH"
-            if self.axis == "Local":
+            if self.axis == "Local" and context.mode != "EDIT_MESH":
                 self.axis = "Global"
             for o in bpy.context.selected_objects:
                 if o.type in support_type:
@@ -276,12 +287,19 @@ class Operator(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "axis")
-        layout.prop(self, "action")
+        if context.mode != "EDIT_MESH" :
+            layout.prop(self, "action")
         
         layout.prop(self, "set_parent")
         
-        if context.mode == "EDIT_MESH":
+        if context.mode == "EDIT_MESH"  and len(context.selected_objects)>=2 :
             layout.prop(self, "set_selected_objects_is_active_parent")
         
         layout.prop(self, "res")
         layout.prop(self, "lerp")
+
+
+if __name__ == "__main__":
+    bpy.utils.register_class(Operator)
+    bpy.utils.register_class(AddonPreference)
+

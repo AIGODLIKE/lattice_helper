@@ -6,18 +6,22 @@ from time import time
 
 class AddonPreference(bpy.types.AddonPreferences):
     bl_idname = __package__
-    def_res: bpy.props.IntVectorProperty(name="默认晶格分辨率", default=[2, 2, 2], min=1, max=64)
+    def_res: bpy.props.IntVectorProperty(name="默认晶格分辨率", default=[2, 2, 2], min=2, max=64)
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "def_res")
-
+        
+        
+#   TODO 添加顶点组
+#   在编辑模式整体失效
 
 class Operator(bpy.types.Operator):
     bl_idname = "lthp.op"
     bl_label = "晶格覆盖"
     bl_description = "自动为选中物体添加晶格"
     bl_options = {"REGISTER", "UNDO"}
+    
     items = [('KEY_LINEAR', 'Linear', ''),
              ('KEY_CARDINAL', 'Cardinal', ''),
              ('KEY_CATMULL_ROM', 'Catmull-Rom', ''),
@@ -27,10 +31,11 @@ class Operator(bpy.types.Operator):
                                  items=[("Local", "Local", ""),
                                         ("Global", "Global", ""),
                                         ("Cursor", "Cursor", "")])
-    action: bpy.props.BoolProperty(default=True, name="整体")
+    action: bpy.props.BoolProperty(default=True, name="所有选择物体作为一个整体",description='如果多选物体将作为一个整体添加晶格')
     set_parent: bpy.props.BoolProperty(default=True, name="设置父级")
-    res: bpy.props.IntVectorProperty(name="Resolution", default=[2, 2, 2], min=1, max=64)
+    res: bpy.props.IntVectorProperty(name="Resolution", default=[2, 2, 2], min=2, max=64)
     lerp: bpy.props.EnumProperty(name="插值", items=items)
+    # new: bpy.props.BoolProperty(default=False, name="新建晶格",)
 
     def __init__(self) -> None:
         self.res[:] = bpy.context.preferences.addons[__package__].preferences.def_res
@@ -125,6 +130,18 @@ class Operator(bpy.types.Operator):
         elif o.type == "MESH":
             self.box_get_common(o, box, mat)
         return box
+        
+    def new_vg(self,obj:bpy.types.Object):
+        vg_name = obj.name + 'LP'                
+        
+        if vg_name not in obj.vertex_groups:# and bpy.context.mode == "EDIT_MESH"
+            obj.vertex_groups.new(name = vg_name)
+            # print(f'obj {obj}  new vg {vg_name}')
+        # C.object.vertex_groups['Suzanne_LP']
+        # active = bpy.context.object.active
+        # bpy.context.object.vertex_groups.active = C.object.vertex_groups['Suzanne_LP']
+        # bpy.context.view_layer.objects.active = D.objects['Suzanne.001']
+
 
     def parent_set(self, child: bpy.types.Object, parent: bpy.types.Object):
         bpy.context.view_layer.update()
@@ -134,7 +151,8 @@ class Operator(bpy.types.Operator):
     def execute(self, context):
         box = [[inf, -inf] for i in range(3)]
         support_type = ["MESH", "CURVE", "FONT", "SURFACE"]
-        if self.action and bpy.context.mode != "EDIT_MESH":
+        active_object = bpy.context.active_object
+        if self.action:#物体模式 and bpy.context.mode != "EDIT_MESH"
             if self.axis == "Local":
                 self.axis = "Global"
             for o in bpy.context.selected_objects:
@@ -161,15 +179,31 @@ class Operator(bpy.types.Operator):
                 for so in selected_objects:
                     if so.type in support_type:
                         self.parent_set(so, lpo)
+            if context.mode == "EDIT_MESH":
+                vg_name = o.name + 'LP'
+                self.new_vg(obj=o)
+                # print('new_vg')
+                # bpy.context.object.vertex_groups.get( 'Group')
+                o.vertex_groups.active = o.vertex_groups.get(vg_name)
+                context.view_layer.objects.active = o
+                bpy.ops.object.vertex_group_assign()
+                mod.vertex_group = vg_name
+                # bpy.data.objects["Suzanne"].modifiers["Group_LP"].vertex_group
+                context.view_layer.objects.active = active_object
+
+
         else:
             for o in bpy.context.selected_objects[:]:
                 if o.type not in support_type:
                     self.report({"ERROR"}, f"物体{o.name}类型:{o.type}不支持！")
                     return {"FINISHED"}
                 bbox = self.box_get(o)
+                
                 lt = bpy.data.lattices.new(name=o.name + "_LP")
-                lt.interpolation_type_u = lt.interpolation_type_v = lt.interpolation_type_w = self.lerp
+                lt.interpolation_type_u = lt.interpolation_type_v = lt.interpolation_type_w = self.lerp                
                 lpo = bpy.data.objects.new(name=lt.name, object_data=lt)
+                
+                
                 scale = [(box[1] - box[0]) if abs(box[1] - box[0]) > 0.00000001 else 0.1 for box in bbox]
                 location = Vector([(box[1] + box[0]) / 2 for box in bbox])
 
@@ -184,7 +218,7 @@ class Operator(bpy.types.Operator):
                     lpo.location = bpy.context.scene.cursor.rotation_euler.to_matrix() @ location
                 else:
                     lpo.location = location
-
+                
                 lpo.scale = scale
 
                 mod = o.modifiers.new(name=lpo.name, type="LATTICE")
@@ -193,13 +227,26 @@ class Operator(bpy.types.Operator):
                 lt.points_u, lt.points_v, lt.points_w = self.res
                 if self.set_parent:
                     self.parent_set(o, lpo)
+                    
+                    
+                if context.mode == "EDIT_MESH":
+                    vg_name = o.name + 'LP'
+                    self.new_vg(obj=o)
+                    # print('new_vg')
+                    # bpy.context.object.vertex_groups.get( 'Group')
+                    o.vertex_groups.active = o.vertex_groups.get(vg_name)
+                    context.view_layer.objects.active = o
+                    bpy.ops.object.vertex_group_assign()
+                    mod.vertex_group = vg_name
+                    # bpy.data.objects["Suzanne"].modifiers["Group_LP"].vertex_group
+                    context.view_layer.objects.active = active_object
 
         return {"FINISHED"}
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "axis")
-        layout.prop(self, "action")
+        layout.prop(self, "action")        
         layout.prop(self, "set_parent")
         layout.prop(self, "res")
         layout.prop(self, "lerp")

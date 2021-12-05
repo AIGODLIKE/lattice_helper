@@ -25,6 +25,8 @@ class AddonPreference(bpy.types.AddonPreferences):
 #   在编辑模式整体失效
 #   TODO 设置活动项为晶格父级 -编辑模式
 #   TODO 设置活动项为其它选中物体父级 -编辑模式 多物体
+#   在编辑模式下设置晶格会有顶点组位置算法的问题
+#   在一个编辑模式
 
 class Operator(bpy.types.Operator):
     bl_idname = "lthp.op"

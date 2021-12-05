@@ -148,12 +148,12 @@ class Operator(bpy.types.Operator):
             self.box_get_common(o, box, mat)
         return box
         
-    def new_vg(self,obj:bpy.types.Object):
-        vg_name = obj.name + '_LP'                
+    def new_vg(self,obj:bpy.types.Object,name=''):
+        vg_name = name + '_LP'                
         
         if vg_name not in obj.vertex_groups:# and bpy.context.mode == "EDIT_MESH"
             obj.vertex_groups.new(name = vg_name)
-            # print(f'obj {obj}  new vg {vg_name}')
+            print(f'obj {obj}  new vg {vg_name}')
         # C.object.vertex_groups['Suzanne_LP']
         # active = bpy.context.object.active
         # bpy.context.object.vertex_groups.active = C.object.vertex_groups['Suzanne_LP']
@@ -195,22 +195,23 @@ class Operator(bpy.types.Operator):
                 if o.type in support_type:
                     mod = o.modifiers.new(name="Group_LP", type="LATTICE")
                     mod.object = lpo
+                if context.mode == "EDIT_MESH":
+                    vg_name = mod.name + '_LP'
+                    self.new_vg(obj=o,name=mod.name)
+                    # print('new_vg')
+                    # bpy.context.object.vertex_groups.get( 'Group')
+                    o.vertex_groups.active = o.vertex_groups.get(vg_name)
+                    context.view_layer.objects.active = o
+                    bpy.ops.object.vertex_group_assign()
+                    mod.vertex_group = vg_name
+                    # bpy.data.objects["Suzanne"].modifiers["Group_LP"].vertex_group
+                    context.view_layer.objects.active = active_object
+                    
             if self.set_parent:
                 selected_objects = bpy.context.selected_objects[:]
                 for so in selected_objects:
                     if so.type in support_type:
                         self.parent_set(so, lpo,reverse=context.mode == "EDIT_MESH")
-            if context.mode == "EDIT_MESH":
-                vg_name = o.name + '_LP'
-                self.new_vg(obj=o)
-                # print('new_vg')
-                # bpy.context.object.vertex_groups.get( 'Group')
-                o.vertex_groups.active = o.vertex_groups.get(vg_name)
-                context.view_layer.objects.active = o
-                bpy.ops.object.vertex_group_assign()
-                mod.vertex_group = vg_name
-                # bpy.data.objects["Suzanne"].modifiers["Group_LP"].vertex_group
-                context.view_layer.objects.active = active_object
 
         else:
             for o in bpy.context.selected_objects[:]:
@@ -250,8 +251,8 @@ class Operator(bpy.types.Operator):
                     
                     
                 if context.mode == "EDIT_MESH":
-                    vg_name = o.name + 'LP'
-                    self.new_vg(obj=o)
+                    vg_name = mod.name + '_LP'
+                    self.new_vg(obj=o,name=mod.name)
                     # print('new_vg')
                     # bpy.context.object.vertex_groups.get( 'Group')
                     o.vertex_groups.active = o.vertex_groups.get(vg_name)
@@ -269,7 +270,7 @@ class Operator(bpy.types.Operator):
                         self.parent_set(o,active_object)
                         # print('设置父级',o,active_object)
                         # bpy.data.objects["Suzanne"].parent
-        # set_selected_objects_is_active_parent()
+        set_selected_objects_is_active_parent()
         return {"FINISHED"}
 
     def draw(self, context):

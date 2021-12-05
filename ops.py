@@ -8,9 +8,17 @@ class AddonPreference(bpy.types.AddonPreferences):
     bl_idname = __package__
     def_res: bpy.props.IntVectorProperty(name="默认晶格分辨率", default=[2, 2, 2], min=2, max=64)
 
+    items = [('KEY_LINEAR', 'Linear', ''),
+             ('KEY_CARDINAL', 'Cardinal', ''),
+             ('KEY_CATMULL_ROM', 'Catmull-Rom', ''),
+             ('KEY_BSPLINE', 'BSpline', '')]
+    
+    lerp: bpy.props.EnumProperty(name="插值", items=items,default='KEY_LINEAR')
+    
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "def_res")
+        layout.prop(self, "lerp")
         
         
 #   添加顶点组
@@ -34,13 +42,20 @@ class Operator(bpy.types.Operator):
                                         ("Global", "Global", ""),
                                         ("Cursor", "Cursor", "")])
     action: bpy.props.BoolProperty(default=True, name="所有选择物体作为一个整体",description='如果多选物体将作为一个整体添加晶格')
-    set_parent: bpy.props.BoolProperty(default=True, name="设置父级")
+    set_parent: bpy.props.BoolProperty(default=True, name="设置父级",description=
+                                       '''如果在物体模式下,将设置晶格为物体的父级
+                                        如果在网格编辑模式下,将设置活动物体为晶格父级
+                                       ''')
+    set_selected_objects_is_active_parent: bpy.props.BoolProperty(default=False, name="设置活动项为其它选中物体父级",description='设置活动项为其它选中物体父级',options={'SKIP_SAVE'})
+    
     res: bpy.props.IntVectorProperty(name="Resolution", default=[2, 2, 2], min=2, max=64)
+    
     lerp: bpy.props.EnumProperty(name="插值", items=items)
     # new: bpy.props.BoolProperty(default=False, name="新建晶格",)
 
     def __init__(self) -> None:
         self.res[:] = bpy.context.preferences.addons[__package__].preferences.def_res
+        self.lerp = bpy.context.preferences.addons[__package__].preferences.lerp
         self.data = {}
 
     def min_max_calc(self, vertices, mat, box, gtv=None):
@@ -134,7 +149,7 @@ class Operator(bpy.types.Operator):
         return box
         
     def new_vg(self,obj:bpy.types.Object):
-        vg_name = obj.name + 'LP'                
+        vg_name = obj.name + '_LP'                
         
         if vg_name not in obj.vertex_groups:# and bpy.context.mode == "EDIT_MESH"
             obj.vertex_groups.new(name = vg_name)
@@ -153,7 +168,7 @@ class Operator(bpy.types.Operator):
         else:
             child.parent = parent
             child.matrix_parent_inverse = parent.matrix_world.inverted()
-            
+
     def execute(self, context):
         box = [[inf, -inf] for i in range(3)]
         support_type = ["MESH", "CURVE", "FONT", "SURFACE"]
@@ -186,7 +201,7 @@ class Operator(bpy.types.Operator):
                     if so.type in support_type:
                         self.parent_set(so, lpo,reverse=context.mode == "EDIT_MESH")
             if context.mode == "EDIT_MESH":
-                vg_name = o.name + 'LP'
+                vg_name = o.name + '_LP'
                 self.new_vg(obj=o)
                 # print('new_vg')
                 # bpy.context.object.vertex_groups.get( 'Group')
@@ -196,7 +211,6 @@ class Operator(bpy.types.Operator):
                 mod.vertex_group = vg_name
                 # bpy.data.objects["Suzanne"].modifiers["Group_LP"].vertex_group
                 context.view_layer.objects.active = active_object
-
 
         else:
             for o in bpy.context.selected_objects[:]:
@@ -247,12 +261,26 @@ class Operator(bpy.types.Operator):
                     # bpy.data.objects["Suzanne"].modifiers["Group_LP"].vertex_group
                     context.view_layer.objects.active = active_object
 
+        def set_selected_objects_is_active_parent():
+            if self.set_selected_objects_is_active_parent and len(context.selected_objects)>=2 and context.mode == "EDIT_MESH":
+                for o in context.selected_objects:
+                    if o!= context.active_object and o.parent == None:
+                        # o.parent = active_object
+                        self.parent_set(o,active_object)
+                        # print('设置父级',o,active_object)
+                        # bpy.data.objects["Suzanne"].parent
+        # set_selected_objects_is_active_parent()
         return {"FINISHED"}
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "axis")
-        layout.prop(self, "action")        
+        layout.prop(self, "action")
+        
         layout.prop(self, "set_parent")
+        
+        if context.mode == "EDIT_MESH":
+            layout.prop(self, "set_selected_objects_is_active_parent")
+        
         layout.prop(self, "res")
         layout.prop(self, "lerp")

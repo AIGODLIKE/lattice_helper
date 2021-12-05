@@ -6,7 +6,7 @@ from time import time
 
 class AddonPreference(bpy.types.AddonPreferences):
     bl_idname = __package__
-    def_res: bpy.props.IntVectorProperty(name="Default Resolution", default=[2, 2, 2], min=1, max=64)
+    def_res: bpy.props.IntVectorProperty(name="默认晶格分辨率", default=[2, 2, 2], min=1, max=64)
 
     def draw(self, context):
         layout = self.layout

@@ -6,7 +6,7 @@ bl_info = {
     'version': (1, 0),
     'blender': (2, 90, 0),
     'location': '3DView->晶格助手',
-    'category': '辅助插件',
+    'category': '辣椒出品',
 }
 
 from .ui import LATTICE_H_MT_Menus, menu_unregister, menu_register

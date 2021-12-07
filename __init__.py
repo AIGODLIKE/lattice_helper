@@ -10,9 +10,9 @@ bl_info = {
 }
 
 from .ui import LATTICE_H_MT_Menus, menu_unregister, menu_register
-from .ops import Operator, AddonPreference
+from .ops import Lattice_Operator, AddonPreference
 
-clss = [LATTICE_H_MT_Menus, Operator, AddonPreference]
+clss = [LATTICE_H_MT_Menus, Lattice_Operator, AddonPreference]
 
 
 def register():

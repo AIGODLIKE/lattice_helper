@@ -1,5 +1,5 @@
 import bpy
-from .ops import Operator
+from .ops import Lattice_Operator
 
 
 class LATTICE_H_MT_Menus(bpy.types.Menu):
@@ -7,16 +7,18 @@ class LATTICE_H_MT_Menus(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(Operator.bl_idname)
+        layout.operator(Lattice_Operator.bl_idname)
 
 
 def menu_func(self, context):
     # self.layout.menu('LATTICE_H_MT_Menus')
-    if len(context.selected_objects)>=2 and context.mode == "EDIT_MESH":
-        pass
-    else:
-        self.layout.column().operator(Operator.bl_idname)
-        self.layout.separator()
+    self.layout.operator_context = 'INVOKE_DEFAULT'
+
+    # if len(context.selected_objects)>=2 and context.mode == "EDIT_MESH":
+    #     pass
+    # else:
+    self.layout.column().operator(Lattice_Operator.bl_idname)
+    self.layout.separator()
 
 
 def menu_register():

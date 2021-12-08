@@ -12,7 +12,7 @@ class LATTICE_H_MT_Menus(bpy.types.Menu):
 
 def menu_func(self, context):
     # self.layout.menu('LATTICE_H_MT_Menus')
-    self.layout.operator_context = 'INVOKE_DEFAULT'
+    # self.layout.operator_context = 'INVOKE_DEFAULT'
 
     # if len(context.selected_objects)>=2 and context.mode == "EDIT_MESH":
     #     pass

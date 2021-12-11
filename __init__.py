@@ -3,7 +3,7 @@ import bpy
 bl_info = {
     "name": "Lattice助手",
     'author': '会飞的键盘侠,小萌新',
-    'version': (1, 0),
+    'version': (1, 2),
     'blender': (2, 90, 0),
     'location': '3DView->晶格助手',
     'category': '辣椒出品',

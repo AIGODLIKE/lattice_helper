@@ -141,8 +141,8 @@ class Lattice_Operator(bpy.types.Operator):
 
 
     def __init__(self) -> None:
-        # self.res[:] = bpy.context.preferences.addons[__package__].preferences.def_res
-        # self.lerp = bpy.context.preferences.addons[__package__].preferences.lerp
+        self.res[:] = bpy.context.preferences.addons[__package__].preferences.def_res
+        self.lerp = bpy.context.preferences.addons[__package__].preferences.lerp
         # self.data = {}
         
         # if bpy.context.mode == "EDIT_MESH":
@@ -551,11 +551,9 @@ class Lattice_Operator(bpy.types.Operator):
         if context.mode == "EDIT_MESH":
             layout.prop(self, "edit_axis")#,expand=True)
             layout.prop(self, "obj_edit_mode")#,expand=True)
-            # layout.prop(self,'use_vert_group')
         else:
             layout.prop(self, "axis")#,expand=True)
             layout.prop(self, "obj_mode")#,expand=True)
-            
         
         layout.prop(self, "res")
         layout.prop(self, "lerp")#,expand=True)

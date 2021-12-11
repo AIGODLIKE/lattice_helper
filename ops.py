@@ -209,6 +209,9 @@ class Lattice_Operator(bpy.types.Operator):
         import bmesh
         bm = bmesh.from_edit_mesh(o.data)
         verts = [v for v in bm.verts if v.select]
+        if len(verts) <=5:
+            verts = [v for v in bm.verts]
+
         if self.axis == "Local":
             mat = Matrix.Translation(mat.to_translation()) @ Matrix.Diagonal(mat.to_scale()).to_4x4()
         elif self.axis == "Cursor":
@@ -445,8 +448,10 @@ class Lattice_Operator(bpy.types.Operator):
                 return self.data[o.name][obj_edit_mode][self.axis]
 
             mat = o.matrix_world
+            
             if bpy.context.mode == 'EDIT_MESH':
-                self.box_get_bmesh(bpy.context.edit_object, box, mat)
+                for o in selected_objects:
+                    self.box_get_bmesh(o, box, mat)
 
             elif o.type != "MESH":
                 self.min_max_calc(o.bound_box, mat,  box, lambda v: Vector(v))

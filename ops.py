@@ -619,7 +619,7 @@ class Apply_Lattice_Operator(bpy.types.Operator):
     def execute(self, context):
         self.active_object = context.active_object#实例当前活动物体出来备用  添加顶点组用
 
-        support_type = ['LATTICE',"MESH", "CURVE", "FONT", "SURFACE","HAIR","GPENCIL"]
+        support_type = ['LATTICE',"MESH", "CURVE",  "SURFACE","GPENCIL"]#"FONT",,"HAIR"毛发无法应用修改器
 
         selected_objects =  [obj for obj in context.selected_objects if obj.type in support_type] \
                                 if context.mode == 'OBJECT' else \
@@ -634,7 +634,7 @@ class Apply_Lattice_Operator(bpy.types.Operator):
 
             for obj in   context.scene.objects:
                 for mod in (obj.modifiers if obj.type !='GPENCIL' else obj.grease_pencil_modifiers):
-                    if  mod.type in ('GP_LATTICE','LATTICE'):
+                    if  mod.type in ('GP_LATTICE','LATTICE') and  obj.type in support_type:
                         
                         # print(obj,mod.type  in ('GP_LATTICE','LATTICE'))
                         if mod.object in lattice_objects_list:
@@ -651,16 +651,18 @@ class Apply_Lattice_Operator(bpy.types.Operator):
                                 tmp_del_vg = mod.vertex_group
                             
                             if self.mode == 'apply_lattice':
-                                # print(obj,'apply_lattice',mod.name)
+                                print(obj,'apply_lattice',mod.name)
                                 bpy.ops.object.modifier_apply(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_apply(modifier=mod.name)
                             
                             if self.mode == 'del_lattice':
                                 # print(obj,'del_lattice',mod.name)
                                 bpy.ops.object.modifier_remove(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_remove(modifier=mod.name)
                             
-                            if self.del_vg and tmp_del_vg in obj.vertex_groups:
-                                obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
-                                tmp_del_vg = None
+                            if obj.type == 'MESH' and tmp_del_vg != None:
+                                # print(obj,tmp_del_vg)
+                                if self.del_vg and tmp_del_vg in obj.vertex_groups:
+                                    obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
+                                    tmp_del_vg = None
         else:
             
             for obj in   selected_objects:
@@ -688,9 +690,11 @@ class Apply_Lattice_Operator(bpy.types.Operator):
                             # print(obj,'del_lattice',mod.name)
                             bpy.ops.object.modifier_remove(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_remove(modifier=mod.name)
                         
-                        if self.del_vg and tmp_del_vg in obj.vertex_groups:
-                            obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
-                            tmp_del_vg = None
+                        if obj.type == 'MESH' and tmp_del_vg != None:
+
+                            if self.del_vg and tmp_del_vg in obj.vertex_groups:
+                                obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
+                                tmp_del_vg = None
 
 
         # context.view_layer.objects.active = self.active_object

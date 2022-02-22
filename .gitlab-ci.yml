@@ -1,0 +1,22 @@
+variables:
+  PROJECT_NAME: "LatticeHelper"
+  VERSION: "1.0.0"
+
+stages:
+  - sonar
+
+sonar:
+  stage: sonar
+  only:
+    - master
+    - /^feat-.*$/
+    - /^fix-.*$/
+    - /^hotfix-.*$/
+  script:
+    - |
+      sonar-scanner \
+      -Dsonar.projectKey=$PROJECT_NAME \
+      -Dsonar.projectName=$PROJECT_NAME \
+      -Dsonar.projectVersion=$VERSION \
+      -Dsonar.host.url=https://sonar.ump9.cc \
+      -Dsonar.login=0789ddbc04c18452daa5a9cc561fb7321e4de62f

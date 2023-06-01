@@ -657,9 +657,11 @@ class Apply_Lattice_Operator(bpy.types.Operator):
                                     tmp_del_vg = mod.vertex_group
                                 
                                 if self.mode == 'apply_lattice':
-                                    print(obj,'apply_lattice',mod.name)
-                                    bpy.ops.object.modifier_apply(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_apply(modifier=mod.name)
-                                
+                                    # print(obj,'apply_lattice',mod.name)
+                                    try:
+                                        bpy.ops.object.modifier_apply(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_apply(modifier=mod.name)
+                                    except RuntimeError as e:
+                                        self.report({"ERROR"}, str(e))
                                 elif self.mode == 'del_lattice':
                                     # print(obj,'del_lattice',mod.name)
                                     bpy.ops.object.modifier_remove(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_remove(modifier=mod.name)
@@ -696,8 +698,10 @@ class Apply_Lattice_Operator(bpy.types.Operator):
                             
                             if self.mode == 'apply_lattice':
                                 # print(obj,'apply_lattice',mod.name)
-                                bpy.ops.object.modifier_apply(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_apply(modifier=mod.name)
-                            
+                                try:
+                                    bpy.ops.object.modifier_apply(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_apply(modifier=mod.name)
+                                except RuntimeError as e:
+                                    self.report({"ERROR"}, str(e))
                             elif self.mode == 'del_lattice':
                                 # print(obj,'del_lattice',mod.name)
                                 bpy.ops.object.modifier_remove(modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_remove(modifier=mod.name)

@@ -3,7 +3,7 @@ from .ops import Lattice_Operator,Apply_Lattice_Operator#,Remove_Lattice_Operato
 
 
 class LATTICE_H_MT_Menus(bpy.types.Menu):
-    bl_label = "Lattice Helper"
+    bl_label = "晶格助手"
 
     def draw(self, context):
         layout = self.layout

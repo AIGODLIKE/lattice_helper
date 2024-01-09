@@ -3,13 +3,13 @@ from .ops import Lattice_Operator,Apply_Lattice_Operator#,Remove_Lattice_Operato
 
 
 class LATTICE_H_MT_Menus(bpy.types.Menu):
-    bl_label = "晶格助手"
+    bl_label = "Lattice Helper"
 
     def draw(self, context):
         layout = self.layout
         layout.operator(Lattice_Operator.bl_idname)
-        layout.operator(Apply_Lattice_Operator.bl_idname,text='应用晶格').mode = 'apply_lattice'
-        layout.operator(Apply_Lattice_Operator.bl_idname,text='删除晶格').mode = 'del_lattice'
+        layout.operator(Apply_Lattice_Operator.bl_idname,text='Apply lattice').mode = 'apply_lattice'
+        layout.operator(Apply_Lattice_Operator.bl_idname,text='Delete lattice').mode = 'del_lattice'
         #layout.operator(Remove_Lattice_Operator.bl_idname)
 
 def menu_func(self, context):

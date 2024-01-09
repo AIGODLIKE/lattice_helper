@@ -61,14 +61,14 @@ def parent_set(child: bpy.types.Object, parent: bpy.types.Object,reverse = False
 
 class AddonPreference(bpy.types.AddonPreferences):
     bl_idname = __package__
-    def_res: bpy.props.IntVectorProperty(name="默认晶格分辨率", default=[2, 2, 2], min=2, max=64)
+    def_res: bpy.props.IntVectorProperty(name="Default lattice resolution", default=[2, 2, 2], min=2, max=64)
 
     items = [('KEY_LINEAR', 'Linear', ''),
              ('KEY_CARDINAL', 'Cardinal', ''),
              ('KEY_CATMULL_ROM', 'Catmull-Rom', ''),
              ('KEY_BSPLINE', 'BSpline', '')]
     
-    lerp: bpy.props.EnumProperty(name="插值", items=items,default='KEY_LINEAR')
+    lerp: bpy.props.EnumProperty(name="Interpolation", items=items,default='KEY_LINEAR')
     
     def draw(self, context):
         layout = self.layout
@@ -95,8 +95,8 @@ class AddonPreference(bpy.types.AddonPreferences):
 #   其它是晶格为父级
 class Lattice_Operator(bpy.types.Operator):
     bl_idname = "lthp.op"
-    bl_label = "晶格覆盖"
-    bl_description = "自动为选中物体添加晶格"
+    bl_label = "Lattice overlay"
+    bl_description = "Automatically add a lattice to selected objects"
     bl_options = {"REGISTER", "UNDO"}
 
     items = [('KEY_LINEAR', 'Linear', ''),
@@ -124,37 +124,36 @@ class Lattice_Operator(bpy.types.Operator):
 
     # action: bpy.props.BoolProperty(default=True, name="所有选择物体作为一个整体",description='如果多选物体将作为一个整体添加晶格')
     
-    set_parent: bpy.props.BoolProperty(default=True, name="设置父级",description=
-                                       '''如果在物体模式下,将设置晶格为物体的父级
-                                        如果在网格编辑模式下,将设置活动物体为晶格父级
+    set_parent: bpy.props.BoolProperty(default=True, name="Set parent",description=
+                                       '''If in Object Mode, set the lattice as the parent of the object.If in lattice Editing Mode, set the active object as the parent of the lattice.
                                        ''')
     
-    set_selected_objects_is_active_parent: bpy.props.BoolProperty(default=False, name="设置活动项为其它选中物体父级",description='设置活动项为其它选中物体父级',options={'SKIP_SAVE'})
+    set_selected_objects_is_active_parent: bpy.props.BoolProperty(default=False, name="Set the active item as the parent of other selected objects",description='Set the active item as the parent of other selected objects',options={'SKIP_SAVE'})
     
     res: bpy.props.IntVectorProperty(name="Resolution", default=[2, 2, 2], min=2, max=64)
-    lerp: bpy.props.EnumProperty(name="插值", items=items)
+    lerp: bpy.props.EnumProperty(name="Interpolation", items=items)
     
     obj_edit_mode_items = [
-        ('whole', '整体', '所有选择顶点作为一个整体'),  #物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
-        ('bound_box', '边界框', '以每一个选择物体的边界框作为一个单独的晶格'),
+        ('whole', 'entirety', 'All selected vertices as a single entity'),  #物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
+        ('bound_box', 'Bounding box', 'Use the bounding box of each selected object as a separate lattice'),
         # ('individual', '各自', '每一个选择的物体作为一个单独的晶格'),
-        ('select_block', '选择块(编辑模式)', '将编辑模式内每一个选择的块作为单独的一个区域添加一个晶格'),        
-        ('whole_block', '整个块(编辑模式)', '将编辑模式内所有选择的块作为一个区域添加晶格'),
+        ('select_block', 'Selection block (edit mode)', 'Add a lattice for each selected block as a separate region within edit mode'),
+        ('whole_block', 'Entire block (edit mode)', 'Add a lattice for all selected blocks within edit mode as a single region'),
              ]
     
-    use_vert_group: bpy.props.BoolProperty(default=False, name="为修改器指定顶点组",description='根据所选的模式生成顶点组',options={'SKIP_SAVE'})
+    use_vert_group: bpy.props.BoolProperty(default=False, name="Specify a vertex group for the modifier",description='Generate a vertex group based on the selected mode',options={'SKIP_SAVE'})
 
-    obj_edit_mode: bpy.props.EnumProperty(default='bound_box',name="模式", items=obj_edit_mode_items)
+    obj_edit_mode: bpy.props.EnumProperty(default='bound_box',name="Mode", items=obj_edit_mode_items)
 
     obj_mode_items = [
-        ('whole', '整体', '所有选择物体作为一个整体'),  #物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
-        ('bound_box', '边界框', '以每一个选择物体的边界框作为一个单独的晶格'),
+        ('whole', 'entirety', 'All selected objects as a single entity'),  #物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
+        ('bound_box', 'Bounding box', 'Use the bounding box of each selected object as a separate lattice'),
         # # ('individual', '各自', '每一个选择的物体作为一个单独的晶格'),
         # ('select_block', '选择块(编辑模式)', '将编辑模式内每一个选择的块作为单独的一个区域添加一个晶格'),        
         # ('whole_block', '整个块(编辑模式)', '将编辑模式内所有选择的块作为一个区域添加晶格'),
         ]
     
-    obj_mode: bpy.props.EnumProperty(default='bound_box',name="模式", items=obj_mode_items)
+    obj_mode: bpy.props.EnumProperty(default='bound_box',name="Mode", items=obj_mode_items)
 
 
     def __init__(self) -> None:
@@ -375,7 +374,7 @@ class Lattice_Operator(bpy.types.Operator):
                         # }}
                     # }
         if len(selected_objects) == 0 :
-            self.report({"ERROR"}, f"未选择可添加晶格物体!!")
+            self.report({"ERROR"}, f"Objects without selection to add lattices!!")
             return {"FINISHED"}
 
         def calc(A,B):
@@ -591,27 +590,25 @@ class Lattice_Operator(bpy.types.Operator):
 
 class Apply_Lattice_Operator(bpy.types.Operator):
     bl_idname = "lthp.apply"
-    bl_label = "应用晶格"
-    bl_description = "自动应用晶格修改器"
+    bl_label = "Apply lattice"
+    bl_description = "Automatically apply the lattice modifier"
     bl_options = {"REGISTER", "UNDO"}#
     
-    mode: bpy.props.EnumProperty(name="模式",
+    mode: bpy.props.EnumProperty(name="Mode",
                                  default="apply_lattice",
                                  items=[
-                                    ("apply_lattice", "应用晶格修改器", ""),
-                                    ("modifier_apply_as_shapekey", "应用晶格修改器为形态键", ""),
-                                    ("keep_modifier_apply_as_shapekey", "保存晶格修改器为形态键", ""),
-                                    ("del_lattice", "删除晶格修改器", ""),
+                                    ("apply_lattice", "Apply the lattice modifier", ""),
+                                    ("modifier_apply_as_shapekey", "Apply the lattice modifier as a shape key", ""),
+                                    ("keep_modifier_apply_as_shapekey", "Save the lattice modifier as a shape key", ""),
+                                    ("del_lattice", "Delete the lattice modifier", ""),
                                         ])
 
-    del_lattice: bpy.props.BoolProperty(default=True, name="删除晶格",description=
-                                    '''在应用或删除晶格修改器时
-                                    删除所选晶格或所选物体所设修改器指定晶格''')
+    del_lattice: bpy.props.BoolProperty(default=True, name="Delete the lattice",description=
+                                    '''When applying or deleting the lattice modifier, remove the specified lattice for the selected lattice or selected objects''')
 
 
-    del_vg: bpy.props.BoolProperty(default=True, name="删除使用的顶点组",description=
-                                    '''删除晶格修改器使用的顶点组
-                                    在应用或删除晶格修改器时同时删除晶格修改器所使用的顶点组''')
+    del_vg: bpy.props.BoolProperty(default=True, name="Delete the used vertex group",description=
+                                    '''Delete the vertex group used by the lattice modifier, and simultaneously remove the vertex group used by the lattice modifier when applying or deleting it''')
     
     
     # clear: bpy.props.BoolProperty(default=True, name="设置父级",description=
@@ -740,7 +737,7 @@ class Apply_Lattice_Operator(bpy.types.Operator):
         if len(print_list) != 0:
             typ   = [i.type for i in print_list]
             name = [i.name for i in print_list]
-            self.report({"WARNING"},f"物体{name} 跳过应用修改器,{typ} 类型不支持应用晶格修改器")
+            self.report({"WARNING"},f"Object{name} skip applying the modifier,{typ} type not supported for applying lattice modifier")
 
         return {'FINISHED'}
 

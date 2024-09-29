@@ -7,11 +7,12 @@ bl_info = {
     'category': 'AIGODLIKE',
 }
 
-from . import ui, ops, preferences
+from . import ui, ops, res, preferences
 
 mods = [
     ui,
     ops,
+    res,
     preferences,
 ]
 

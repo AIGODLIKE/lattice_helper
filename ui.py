@@ -15,10 +15,12 @@ class LATTICE_H_MT_Menus(bpy.types.Menu):
 
 def menu_func(self, context):
     support_type = ['LATTICE', "MESH", "CURVE", "FONT", "SURFACE", "HAIR", "GPENCIL"]
+    is_obj_mode = context.mode == 'OBJECT'
 
-    selected_objects = [obj for obj in context.selected_objects if obj.type in support_type] \
-        if context.mode == 'OBJECT' else \
-        [obj for obj in context.selected_objects if obj.type == 'MESH' and context.mode == 'EDIT_MESH']
+    support_list = [obj for obj in context.selected_objects if obj.type in support_type]
+    mesh_list = [obj for obj in context.selected_objects if obj.type == 'MESH' and context.mode == 'EDIT_MESH']
+
+    selected_objects = support_list if is_obj_mode else mesh_list
     # get所有可用物体列表,如果在网格编辑模式则只获取网格的
 
     modifiers_type = {modifiers.type for obj in selected_objects for modifiers in
@@ -29,7 +31,6 @@ def menu_func(self, context):
         self.layout.column().menu("LATTICE_H_MT_Menus", icon='MOD_LATTICE', )
     else:
         self.layout.column().operator(AddLattice.bl_idname)
-
     self.layout.separator()
 
 

@@ -15,8 +15,8 @@ class TranslationHelper:
     def register(self):
         try:
             bpy.app.translations.register(self.name, self.translations_dict)
-        except(ValueError):
-            pass
+        except ValueError as e:
+            print(e.args)
 
     def unregister(self):
         bpy.app.translations.unregister(self.name)
@@ -30,13 +30,13 @@ def register():
     if bpy.app.version < (4, 0, 0):
         LatticeHelper_zh_CN.register()
     else:
-        LatticeHelper_zh_CN.register()
         LatticeHelper_zh_HANS.register()
+        LatticeHelper_zh_CN.register()
 
 
 def unregister():
     if bpy.app.version < (4, 0, 0):
         LatticeHelper_zh_CN.unregister()
     else:
-        LatticeHelper_zh_CN.unregister()
         LatticeHelper_zh_HANS.unregister()
+        LatticeHelper_zh_CN.unregister()

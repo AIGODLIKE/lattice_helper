@@ -1,8 +1,8 @@
 import bpy
-from bpy.types import AddonPreference
+from bpy.types import AddonPreferences
 
 
-class Preference(AddonPreference):
+class Preference(AddonPreferences):
     bl_idname = __package__
     def_res: bpy.props.IntVectorProperty(name="Default lattice resolution", default=[2, 2, 2], min=2, max=64)
 

@@ -122,7 +122,7 @@ class AddLattice(bpy.types.Operator):
     lerp: bpy.props.EnumProperty(name="Interpolation", items=items)
 
     obj_edit_mode_items = [
-        ('whole', 'entirety', 'All selected vertices as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
+        ('whole', 'Entirety', 'All selected vertices as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
         ('bound_box', 'Bounding box', 'Use the bounding box of each selected object as a separate lattice'),
         # ('individual', '各自', '每一个选择的物体作为一个单独的晶格'),
         ('select_block', 'Selection block (edit mode)',
@@ -138,7 +138,7 @@ class AddLattice(bpy.types.Operator):
     obj_edit_mode: bpy.props.EnumProperty(default='bound_box', name="Mode", items=obj_edit_mode_items)
 
     obj_mode_items = [
-        ('whole', 'entirety', 'All selected objects as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
+        ('whole', 'Entirety', 'All selected objects as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
         ('bound_box', 'Bounding box', 'Use the bounding box of each selected object as a separate lattice'),
         # # ('individual', '各自', '每一个选择的物体作为一个单独的晶格'),
         # ('select_block', '选择块(编辑模式)', '将编辑模式内每一个选择的块作为单独的一个区域添加一个晶格'),        
@@ -365,7 +365,6 @@ class AddLattice(bpy.types.Operator):
             self.report({"ERROR"}, f"Objects without selection to add lattices!!")
             return {"FINISHED"}
 
-
         def new_vertex_groups(object, name, vertex_list):
             bpy.ops.object.mode_set(mode='OBJECT', )
             new_name = name + '_VG'
@@ -407,6 +406,8 @@ class AddLattice(bpy.types.Operator):
                     lpo.location = object.rotation_euler.to_matrix().to_4x4() @ location
                     lpo.scale = scale
                 else:
+                    mat = object.matrix_world
+                    mat_ = Matrix.Translation(mat.to_translation()) @ Matrix.Diagonal(mat.to_scale()).to_4x4()
                     lpo.rotation_euler = object.rotation_euler
                     lpo.scale = scale
                     lpo.location = location
@@ -436,6 +437,7 @@ class AddLattice(bpy.types.Operator):
             self.data = {}
 
             for obj in selected_objects:
+                context.view_layer.update()
                 bbox = box_get_(obj, box)
             scale = [(box[1] - box[0]) if abs(box[1] - box[0]) > 0.00000001 else 0.1 for box in bbox]
             location = [(box[1] + box[0]) / 2 for box in bbox]
@@ -451,10 +453,9 @@ class AddLattice(bpy.types.Operator):
             lt.points_u, lt.points_v, lt.points_w = self.res
 
             for o in selected_objects:
+                context.view_layer.update()
                 if o.type in support_type:
                     if self.set_parent: parent_set(o, lpo)
-                    # mod = o.modifiers.new(name="Group_LP", type="LATTICE")
-
                     if o.type == 'GPENCIL':
                         mod = o.grease_pencil_modifiers.new(name='Group_LP', type="GP_LATTICE")
                     else:
@@ -465,20 +466,20 @@ class AddLattice(bpy.types.Operator):
                     if context.mode == "EDIT_MESH":
                         vg_name = mod.name + '_LP'
                         self.new_vg(obj=o, name=mod.name)
-                        # print('new_vg')
-                        # bpy.context.object.vertex_groups.get( 'Group')
                         o.vertex_groups.active = o.vertex_groups.get(vg_name)
                         context.view_layer.objects.active = o
                         bpy.ops.object.vertex_group_assign()
                         mod.vertex_group = vg_name
-                        # bpy.data.objects["Suzanne"].modifiers["Group_LP"].vertex_group
                         context.view_layer.objects.active = self.active_object
+                    context.view_layer.update()
 
         else:
             for obj in selected_objects:
+                context.view_layer.update()
                 self.box_get(obj,
                              get_block=(obj_edit_mode == 'select_block' and is_edit_mesh_mode),
-                             get_whole_block=(obj_edit_mode == 'whole_block' and is_edit_mesh_mode) or is_edit_mesh_mode,
+                             get_whole_block=(
+                                                     obj_edit_mode == 'whole_block' and is_edit_mesh_mode) or is_edit_mesh_mode,
                              )
                 bound_box = self.objects[obj]['bound_box']
                 if (obj_edit_mode == 'bound_box' and is_edit_mesh_mode) or (obj_mode == 'bound_box' and is_object_mode):
@@ -501,7 +502,7 @@ class AddLattice(bpy.types.Operator):
                     location = Vector([(box[1] + box[0]) / 2 for box in bbox])
                     block = self.objects[obj]['block']
                     new_lattices_object(obj, obj.name, scale, location, vertex_list=list(block['whole_block']))
-
+                context.view_layer.update()
 
         return {'FINISHED'}
 

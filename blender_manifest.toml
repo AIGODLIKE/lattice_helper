@@ -8,4 +8,4 @@ name = "Lattice Helper"
 tagline = "Quickly add a lattice for use"
 type = "add-on"
 version = "1.2.1"
-tags = ["3D View", "User Interface"]
+tags = ["3D View",""]

@@ -8,7 +8,7 @@ data = {
     'Set parent': '设置父级',
     'If in Object Mode, set the lattice as the parent of the object.If in lattice Editing Mode, set the active object as the parent of the lattice': '如果在物体模式下,将设置晶格为物体的父级,如果在网格编辑模式下,将设置活动物体为晶格父级',
     'Set the active item as the parent of other selected objects': '设置活动项为其它选中物体父级',
-    'entirety': '整体',
+    'Entirety': '整体',
     'All selected vertices as a single entity': '所有选择顶点作为一个整体',
     'Bounding box': '边界框',
     'Selection block (edit mode)': '选择块(编辑模式)',
@@ -33,5 +33,4 @@ data = {
     'Delete the vertex group used by the lattice modifier, and simultaneously remove the vertex group used by the lattice modifier when applying or deleting it': '删除晶格修改器使用的顶点组,在应用或删除晶格修改器时同时删除晶格修改器所使用的顶点组',
     'skip applying the modifier': '跳过应用修改器',
     'type not supported for applying lattice modifier': '类型不支持应用晶格修改器',
-
 }

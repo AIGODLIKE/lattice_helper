@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+
+blender_version_min = "4.2.0"
+id = "lattice_helper"
+license = ["SPDX:GPL-3.0-or-later", ]
+maintainer = "AIGODLIKE Community(会飞的键盘侠,小萌新)"
+name = "Lattice Helper"
+tagline = "Quickly add a lattice for use"
+type = "add-on"
+version = "1.2.1"
+tags = ["3D View", "User Interface"]

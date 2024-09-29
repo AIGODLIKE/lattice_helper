@@ -1,5 +1,4 @@
 data = {
-
     'Default lattice resolution': '默认晶格分辨率',
     'Interpolation': '插值',
     'Mode': '模式',
@@ -12,7 +11,6 @@ data = {
     'entirety': '整体',
     'All selected vertices as a single entity': '所有选择顶点作为一个整体',
     'Bounding box': '边界框',
-    'Use the bounding box of each selected object as a separate lattice': '以每一个选择物体的边界框作为一个单独的晶格',
     'Selection block (edit mode)': '选择块(编辑模式)',
     'Entire block (edit mode)': '整个块(编辑模式)',
     'Add a lattice for each selected block as a separate region within edit mode': '将编辑模式内每一个选择的块作为单独的一个区域添加一个晶格',

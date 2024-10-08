@@ -1,12 +1,30 @@
-# !/usr/bin/env Python
-# coding=utf-8
 from math import inf
 
 import bmesh
 import bpy
 from mathutils import Matrix, Vector
 
-from .utils import get_pref
+from ..utils import get_pref
+
+
+#   添加顶点组
+#   在编辑模式整体失效
+#   TODO 设置活动项为晶格父级 -编辑模式
+#   TODO 设置活动项为其它选中物体父级 -编辑模式 多物体
+#   TODO 在编辑模式下设置晶格会有顶点组位置算法的问题
+#   TODO 在一个编辑模式选择多个块，每个块都新建晶格
+#   TODO 1物体模式按照集合认定整体
+#   TODO 2非网格物体修改器适配（例如给曲线添加阵列在计算的时候没考虑修改器带来的尺寸变化）
+#   应用晶格
+#   删除晶格
+
+#   在编辑模式内 局部坐标问题
+#   获取选择块计算时间问题 3W顶点需要计算30S
+#   添加整体边框
+
+
+#   编辑模式里面分块物体绑晶格
+#   其它是晶格为父级
 
 
 def get_select_block(obj):
@@ -21,7 +39,7 @@ def get_select_block(obj):
     bm.faces.ensure_lookup_table()
 
     group_dict = {}  # {选择块:{顶点集合}}
-    select_verts = {verts for verts in bm.verts if verts.select}
+    select_verts = {vert for vert in bm.verts if vert.select}
     select_faces = {face for face in bm.faces if face.select}
 
     if len(select_faces) <= 4:
@@ -62,24 +80,6 @@ def parent_set(child: bpy.types.Object, parent: bpy.types.Object, reverse=False)
         child.matrix_parent_inverse = parent.matrix_world.inverted()
 
 
-#   添加顶点组
-#   在编辑模式整体失效
-#   TODO 设置活动项为晶格父级 -编辑模式
-#   TODO 设置活动项为其它选中物体父级 -编辑模式 多物体
-#   TODO 在编辑模式下设置晶格会有顶点组位置算法的问题
-#   TODO 在一个编辑模式选择多个块，每个块都新建晶格
-#   TODO 1物体模式按照集合认定整体
-#   TODO 2非网格物体修改器适配（例如给曲线添加阵列在计算的时候没考虑修改器带来的尺寸变化）
-#   应用晶格
-#   删除晶格
-
-#   在编辑模式内 局部坐标问题
-#   获取选择块计算时间问题 3W顶点需要计算30S
-#   添加整体边框
-
-
-#   编辑模式里面分块物体绑晶格
-#   其它是晶格为父级
 class AddLattice(bpy.types.Operator):
     bl_idname = "lthp.op"
     bl_label = "Lattice overlay"
@@ -109,9 +109,11 @@ class AddLattice(bpy.types.Operator):
                                       ],
                                       update=update)
 
-    set_parent: bpy.props.BoolProperty(default=True, name="Set parent", description=
-    '''If in Object Mode, set the lattice as the parent of the object.If in lattice Editing Mode, set the active object as the parent of the lattice.
-    ''')
+    set_parent: bpy.props.BoolProperty(
+        default=True,
+        name="Set parent",
+        description=
+        'If in Object Mode, set the lattice as the parent of the object.If in lattice Editing Mode, set the active object as the parent of the lattice')
 
     set_selected_objects_is_active_parent: bpy.props.BoolProperty(default=False,
                                                                   name="Set the active item as the parent of other selected objects",
@@ -141,7 +143,7 @@ class AddLattice(bpy.types.Operator):
         ('whole', 'Entirety', 'All selected objects as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
         ('bound_box', 'Bounding box', 'Use the bounding box of each selected object as a separate lattice'),
         # # ('individual', '各自', '每一个选择的物体作为一个单独的晶格'),
-        # ('select_block', '选择块(编辑模式)', '将编辑模式内每一个选择的块作为单独的一个区域添加一个晶格'),        
+        # ('select_block', '选择块(编辑模式)', '将编辑模式内每一个选择的块作为单独的一个区域添加一个晶格'),
         # ('whole_block', '整个块(编辑模式)', '将编辑模式内所有选择的块作为一个区域添加晶格'),
     ]
 
@@ -329,13 +331,8 @@ class AddLattice(bpy.types.Operator):
     def new_vg(self, obj: bpy.types.Object, name=''):
         vg_name = name + '_LP'
 
-        if vg_name not in obj.vertex_groups:  # and bpy.context.mode == "EDIT_MESH"
+        if vg_name not in obj.vertex_groups:
             obj.vertex_groups.new(name=vg_name)
-            print(f'obj {obj}  new vg {vg_name}')
-        # C.object.vertex_groups['Suzanne_LP']
-        # active = bpy.context.object.active
-        # bpy.context.object.vertex_groups.active = C.object.vertex_groups['Suzanne_LP']
-        # bpy.context.view_layer.objects.active = D.objects['Suzanne.001']
 
     def execute(self, context):
         support_type = ['LATTICE', "MESH", "CURVE", "FONT", "SURFACE", "HAIR", "GPENCIL"]
@@ -374,6 +371,7 @@ class AddLattice(bpy.types.Operator):
                 new = object.vertex_groups[new_name]
             new.add(vertex_list, 1, 'ADD')
             bpy.ops.object.mode_set(mode='EDIT', )
+            context.view_layer.update()
             return new.name
 
         def new_lattices_modifder(object, name, modifder_target, vertex_list):
@@ -388,6 +386,7 @@ class AddLattice(bpy.types.Operator):
             if self.set_parent: parent_set(object, bpy.data.objects[modifder_target.name],
                                            reverse=obj_edit_mode == 'select_block' or obj_edit_mode == 'whole_block'
                                            )
+            context.view_layer.update()
 
         def new_lattices_object(object, latticesname_name, scale, location, vertex_list: list = None):
             lt = bpy.data.lattices.new(name=latticesname_name + '_LP')
@@ -420,10 +419,11 @@ class AddLattice(bpy.types.Operator):
             lt.points_u, lt.points_v, lt.points_w = self.res
             new_lattices_modifder(object, lpo.name, lpo, vertex_list=vertex_list)
 
+            context.view_layer.update()
+
         def box_get_(o: bpy.types.Object, box):
             mat = o.matrix_world
             if bpy.context.mode == 'EDIT_MESH':
-                # for o in selected_objects:
                 self.box_get_bmesh(selected_objects, box, mat)
 
             elif o.type != "MESH":
@@ -439,6 +439,7 @@ class AddLattice(bpy.types.Operator):
             for obj in selected_objects:
                 context.view_layer.update()
                 bbox = box_get_(obj, box)
+                context.view_layer.update()
             scale = [(box[1] - box[0]) if abs(box[1] - box[0]) > 0.00000001 else 0.1 for box in bbox]
             location = [(box[1] + box[0]) / 2 for box in bbox]
             lt = bpy.data.lattices.new(name="Group_LP")
@@ -483,6 +484,7 @@ class AddLattice(bpy.types.Operator):
                              )
                 bound_box = self.objects[obj]['bound_box']
                 if (obj_edit_mode == 'bound_box' and is_edit_mesh_mode) or (obj_mode == 'bound_box' and is_object_mode):
+                    context.view_layer.update()
                     bbox = bound_box['bound_box']
                     scale = [(box[1] - box[0]) if abs(box[1] - box[0]) > 0.00000001 else 0.1 for box in bbox]
                     location = Vector([(box[1] + box[0]) / 2 for box in bbox])
@@ -490,13 +492,16 @@ class AddLattice(bpy.types.Operator):
                 if obj_edit_mode == 'select_block' and is_edit_mesh_mode:
                     A = bound_box['block']
                     for B in A:
+                        context.view_layer.update()
                         bbox = A[B]
                         scale = [(box[1] - box[0]) if abs(box[1] - box[0]) > 0.00000001 else 0.1 for box in bbox]
                         location = Vector([(box[1] + box[0]) / 2 for box in bbox])
                         block = self.objects[obj]['block']
 
                         new_lattices_object(obj, str(B), scale, location, vertex_list=list(block[int(B)]))
+                        context.view_layer.update()
                 elif obj_edit_mode == 'whole_block' and is_edit_mesh_mode:
+                    context.view_layer.update()
                     bbox = bound_box['whole_block']
                     scale = [(box[1] - box[0]) if abs(box[1] - box[0]) > 0.00000001 else 0.1 for box in bbox]
                     location = Vector([(box[1] + box[0]) / 2 for box in bbox])
@@ -517,168 +522,3 @@ class AddLattice(bpy.types.Operator):
         layout.prop(self, "set_parent")
         layout.prop(self, "res")
         layout.prop(self, "lerp")
-
-
-class ApplyLattice(bpy.types.Operator):
-    bl_idname = "lthp.apply"
-    bl_label = "Apply lattice"
-    bl_description = "Automatically apply the lattice modifier"
-    bl_options = {"REGISTER", "UNDO"}  #
-
-    mode: bpy.props.EnumProperty(name="Mode",
-                                 default="apply_lattice",
-                                 items=[
-                                     ("apply_lattice", "Apply the lattice modifier", ""),
-                                     ("modifier_apply_as_shapekey", "Apply the lattice modifier as a shape key", ""),
-                                     (
-                                         "keep_modifier_apply_as_shapekey", "Save the lattice modifier as a shape key",
-                                         ""),
-                                     ("del_lattice", "Delete the lattice modifier", ""),
-                                 ])
-
-    del_lattice: bpy.props.BoolProperty(default=True, name="Delete the lattice", description=
-    '''When applying or deleting the lattice modifier, remove the specified lattice for the selected lattice or selected objects''')
-
-    del_vg: bpy.props.BoolProperty(default=True, name="Delete the used vertex group", description=
-    '''Delete the vertex group used by the lattice modifier, and simultaneously remove the vertex group used by the lattice modifier when applying or deleting it''')
-
-    def execute(self, context):
-        self.active_object = context.active_object  # 实例当前活动物体出来备用  添加顶点组用
-
-        support_type = ['LATTICE', "MESH", "CURVE", "SURFACE", "GPENCIL"]  # "FONT",,"HAIR"毛发无法应用修改器
-
-        selected_objects = [obj for obj in context.selected_objects if obj.type in support_type] \
-            if context.mode == 'OBJECT' else \
-            [obj for obj in context.selected_objects if obj.type == 'MESH' and context.mode == 'EDIT_MESH']
-
-        tmp_del_vg = None
-        tmp_del_obj_dict = {}
-
-        print_list = []
-
-        if 'LATTICE' in {obj.type for obj in selected_objects}:
-
-            lattice_objects_list = {obj for obj in selected_objects if obj.type == 'LATTICE'}
-
-            for obj in context.scene.objects:
-                for mod in (obj.modifiers if obj.type != 'GPENCIL' else obj.grease_pencil_modifiers):
-                    if mod.type in ('GP_LATTICE', 'LATTICE') and mod.object != None:
-                        if obj.type in support_type:
-                            if mod.object in lattice_objects_list:
-                                context.view_layer.objects.active = obj
-                                if self.del_lattice:
-                                    if mod.object not in tmp_del_obj_dict:
-                                        tmp_del_obj_dict[mod.object] = []
-
-                                    if obj not in tmp_del_obj_dict[mod.object]:
-                                        tmp_del_obj_dict[mod.object].append(obj)
-
-                                if mod.vertex_group in obj.vertex_groups and self.del_vg:  # mod.vertex_group in obj.vertex_groups and
-                                    tmp_del_vg = mod.vertex_group
-
-                                if self.mode == 'apply_lattice':
-                                    try:
-                                        bpy.ops.object.modifier_apply(
-                                            modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_apply(
-                                            modifier=mod.name)
-                                    except RuntimeError as e:
-                                        self.report({"ERROR"}, str(e))
-                                elif self.mode == 'del_lattice':
-                                    bpy.ops.object.modifier_remove(
-                                        modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_remove(
-                                        modifier=mod.name)
-                                elif self.mode == 'modifier_apply_as_shapekey' and obj.type != 'GPENCIL':
-                                    bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=False, modifier=mod.name)
-                                elif self.mode == 'keep_modifier_apply_as_shapekey' and obj.type != 'GPENCIL':
-                                    bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=True, modifier=mod.name)
-                                if obj.type == 'MESH' and tmp_del_vg != None:
-                                    if self.del_vg and tmp_del_vg in obj.vertex_groups:
-                                        obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
-                                        tmp_del_vg = None
-                        else:
-                            print_list.append(obj)
-
-        else:
-
-            for obj in selected_objects:
-                for mod in (obj.modifiers if obj.type != 'GPENCIL' else obj.grease_pencil_modifiers):
-                    if mod.type in ('GP_LATTICE', 'LATTICE') and mod.object != None:
-                        if obj.type in support_type:
-                            # print(obj,mod.type  in ('GP_LATTICE','LATTICE'))
-                            context.view_layer.objects.active = obj
-
-                            if self.del_lattice:
-                                if mod.object not in tmp_del_obj_dict:
-                                    tmp_del_obj_dict[mod.object] = []
-
-                                if obj not in tmp_del_obj_dict[mod.object]:
-                                    tmp_del_obj_dict[mod.object].append(obj)
-
-                            if mod.vertex_group in obj.vertex_groups and self.del_vg:  # mod.vertex_group in obj.vertex_groups and
-                                tmp_del_vg = mod.vertex_group
-
-                            if self.mode == 'apply_lattice':
-                                # print(obj,'apply_lattice',mod.name)
-                                try:
-                                    bpy.ops.object.modifier_apply(
-                                        modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_apply(
-                                        modifier=mod.name)
-                                except RuntimeError as e:
-                                    self.report({"ERROR"}, str(e))
-                            elif self.mode == 'del_lattice':
-                                # print(obj,'del_lattice',mod.name)
-                                bpy.ops.object.modifier_remove(
-                                    modifier=mod.name) if obj.type != 'GPENCIL' else bpy.ops.object.gpencil_modifier_remove(
-                                    modifier=mod.name)
-
-                            elif self.mode == 'modifier_apply_as_shapekey' and obj.type != 'GPENCIL':
-                                bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=False, modifier=mod.name)
-                            elif self.mode == 'keep_modifier_apply_as_shapekey' and obj.type != 'GPENCIL':
-                                bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=True, modifier=mod.name)
-
-                            if obj.type == 'MESH' and tmp_del_vg != None:
-
-                                if self.del_vg and tmp_del_vg in obj.vertex_groups:
-                                    obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
-                                    tmp_del_vg = None
-                        else:
-                            print_list.append(obj)
-
-        tmp_obj_mat_dict = {}
-        if self.del_lattice:
-            bpy.ops.object.select_all(action='DESELECT')
-            for obj in tmp_del_obj_dict:
-                obj.select_set(True, view_layer=context.view_layer)
-                for i in tmp_del_obj_dict[obj]:
-                    tmp_obj_mat_dict[i] = i.matrix_world.copy()
-                #  A = bpy.context.object.matrix_world.copy()
-                # >>> bpy.context.object.matrix_world = A
-            bpy.ops.object.delete(use_global=True)
-
-            for obj in tmp_obj_mat_dict:
-                obj.matrix_world = tmp_obj_mat_dict[obj]
-        if len(print_list) != 0:
-            typ = [i.type for i in print_list]
-            name = [i.name for i in print_list]
-            self.report({"WARNING"},
-                        f"Object{name} skip applying the modifier,{typ} type not supported for applying lattice modifier")
-
-        return {'FINISHED'}
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "mode", expand=True)
-
-        row = layout.row()
-        row.prop(self, "del_lattice")
-        row.prop(self, "del_vg")
-
-
-def register():
-    bpy.utils.register_class(AddLattice)
-    bpy.utils.register_class(ApplyLattice)
-
-
-def unregister():
-    bpy.utils.unregister_class(AddLattice)
-    bpy.utils.unregister_class(ApplyLattice)

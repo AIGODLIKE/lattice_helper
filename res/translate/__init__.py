@@ -1,3 +1,5 @@
+import bpy
+
 from . import zh_CN
 
 

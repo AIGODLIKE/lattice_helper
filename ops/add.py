@@ -22,7 +22,6 @@ from ..utils import get_pref
 #   获取选择块计算时间问题 3W顶点需要计算30S
 #   添加整体边框
 
-
 #   编辑模式里面分块物体绑晶格
 #   其它是晶格为父级
 
@@ -507,6 +506,7 @@ class AddLattice(bpy.types.Operator):
                     location = Vector([(box[1] + box[0]) / 2 for box in bbox])
                     block = self.objects[obj]['block']
                     new_lattices_object(obj, obj.name, scale, location, vertex_list=list(block['whole_block']))
+                    context.view_layer.update()
                 context.view_layer.update()
 
         return {'FINISHED'}

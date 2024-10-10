@@ -7,5 +7,5 @@ maintainer = "AIGODLIKE Community(会飞的键盘侠,小萌新)"
 name = "Lattice Helper"
 tagline = "Quickly add a lattice for use"
 type = "add-on"
-version = "1.2.1"
-tags = ["3D View","Modeling","Mesh","Object"]
+version = "1.2.2"
+tags = ["3D View", "Modeling", "Mesh", "Object"]

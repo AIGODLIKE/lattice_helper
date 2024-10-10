@@ -44,4 +44,4 @@ def register():
 
 
 def unregister():
-    LatticeHelper_zh_CN.unregister()
+    LatticeHelper_zh_HANS.unregister()

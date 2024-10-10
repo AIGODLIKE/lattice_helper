@@ -18,11 +18,21 @@ class ApplyLattice(bpy.types.Operator):
                                      ("del_lattice", "Delete the lattice modifier", ""),
                                  ])
 
-    del_lattice: bpy.props.BoolProperty(default=True, name="Delete the lattice", description=
-    '''When applying or deleting the lattice modifier, remove the specified lattice for the selected lattice or selected objects''')
+    del_lattice: bpy.props.BoolProperty(
+        default=True,
+        name="Delete the lattice",
+        description="When applying or deleting the lattice modifier, "
+                    "remove the specified lattice for the selected lattice or selected objects"
+    )
 
-    del_vg: bpy.props.BoolProperty(default=True, name="Delete the used vertex group", description=
-    '''Delete the vertex group used by the lattice modifier, and simultaneously remove the vertex group used by the lattice modifier when applying or deleting it''')
+    del_vg: bpy.props.BoolProperty(
+        default=True,
+        name="Delete the used vertex group",
+        description="Delete the vertex group used by the lattice modifier, "
+                    "and simultaneously remove the vertex group used "
+                    "by the lattice modifier when applying or deleting it")
+
+    active_object = None
 
     def execute(self, context):
         self.active_object = context.active_object  # 实例当前活动物体出来备用  添加顶点组用
@@ -142,7 +152,8 @@ class ApplyLattice(bpy.types.Operator):
             typ = [i.type for i in print_list]
             name = [i.name for i in print_list]
             self.report({"WARNING"},
-                        f"Object{name} skip applying the modifier,{typ} type not supported for applying lattice modifier")
+                        f"Object{name} skip applying the modifier,"
+                        f"{typ} type not supported for applying lattice modifier")
 
         return {'FINISHED'}
 

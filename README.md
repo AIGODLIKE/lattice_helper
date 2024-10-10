@@ -1,21 +1,27 @@
+Lattice modifiers can be added quickly, and lattice control can be added by selecting a block in edit mode.
 ![preview.gif](res%2Freadme%2Fpreview.gif)
 
-Install
+Install  
 ![install.jpg](res%2Freadme%2Finstall.jpg)
 
-
-Entirety
+Usage  
+3DView -> Context Menu -> LatticeHelper
+  
+Entirety  
 All selected objects as a single entity
 ![entirety.png](res%2Freadme%2Fentirety.png)
-Bounding Box
+
+Bounding Box  
 Use the bounding box of each selected object as a separate lattice
 ![bound.png](res%2Freadme%2Fbound.png)
-Selection Block (Edit Mode)
+
+Selection Block (Edit Mode)  
 Add a lattice for each selected block as a separate region within edit mode
 ![select_block.png](res%2Freadme%2Fselect_block.png)
-Entire Block (Edit Mode)
+
+Entire Block (Edit Mode)  
 Add a lattice for all selected blocks within edit mode as a single region
 ![entirety_block.png](res%2Freadme%2Fentirety_block.png)
 
-Apply Lattice
+Apply Lattice  
 ![apply_lattice.png](res%2Freadme%2Fapply_lattice.png)

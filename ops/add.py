@@ -143,7 +143,7 @@ class AddLattice(bpy.types.Operator):
                                            description='Generate a vertex group based on the selected mode',
                                            options={'SKIP_SAVE'})
 
-    obj_edit_mode: bpy.props.EnumProperty(default='bound_box', name="Mode", items=OBJECT_EDIT_MODE_ITEMS)
+    obj_edit_mode: bpy.props.EnumProperty(default='select_block', name="Mode", items=OBJECT_EDIT_MODE_ITEMS)
 
     obj_mode: bpy.props.EnumProperty(default='bound_box', name="Mode", items=OBJECT_MODE_ITEMS)
 
@@ -280,11 +280,6 @@ class AddLattice(bpy.types.Operator):
                 self.objects[obj]['bound_box']['bound_box'] = min_max_calc(obj.bound_box, mat,
                                                                            [[inf, -inf] for _ in range(3)],
                                                                            lambda v: Vector(v))
-
-    def invoke(self, context, event):
-        if context.mode == "EDIT_MESH":
-            self.obj_edit_mode = "select_block"
-        return self.execute(context)
 
     def execute(self, context):
         support_type = ['LATTICE', "MESH", "CURVE", "FONT", "SURFACE", "HAIR", "GPENCIL"]

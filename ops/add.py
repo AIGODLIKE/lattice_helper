@@ -6,27 +6,8 @@ from mathutils import Matrix, Vector
 
 from ..utils import get_pref
 
-#   添加顶点组
-#   在编辑模式整体失效
-#   TODO 设置活动项为晶格父级 -编辑模式
-#   TODO 设置活动项为其它选中物体父级 -编辑模式 多物体
-#   TODO 在编辑模式下设置晶格会有顶点组位置算法的问题
-#   TODO 在一个编辑模式选择多个块，每个块都新建晶格
-#   TODO 1物体模式按照集合认定整体
-#   TODO 2非网格物体修改器适配（例如给曲线添加阵列在计算的时候没考虑修改器带来的尺寸变化）
-#   应用晶格
-#   删除晶格
-
-#   在编辑模式内 局部坐标问题
-#   获取选择块计算时间问题 3W顶点需要计算30S
-#   添加整体边框
-
-#   编辑模式里面分块物体绑晶格
-#   其它是晶格为父级
-
-
 OBJECT_MODE_ITEMS = [
-    ('whole', 'Entirety', 'All selected objects as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
+    ('whole', 'Entirety', 'All selected objects as a single entity'),
     ('bound_box', 'Bounding Box', 'Use the bounding box of each selected object as a separate lattice'),
 ]
 

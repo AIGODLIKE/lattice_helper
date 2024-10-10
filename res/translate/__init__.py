@@ -1,6 +1,18 @@
 import bpy
 
 from . import zh_CN
+from ...utils import get_language_list
+
+all_language = get_language_list()
+
+
+def get_language(language):
+    if language not in all_language:
+        if bpy.app.version < (4, 0, 0):
+            return "zh_CN"
+        else:
+            return "zh_HANS"
+    return language
 
 
 class TranslationHelper:
@@ -24,21 +36,12 @@ class TranslationHelper:
         bpy.app.translations.unregister(self.name)
 
 
-LatticeHelper_zh_CN = TranslationHelper('LatticeHelper_zh_CN', zh_CN.data)
-LatticeHelper_zh_HANS = TranslationHelper('LatticeHelper_zh_HANS', zh_CN.data, lang='zh_HANS')
+LatticeHelper_zh_HANS = TranslationHelper('LatticeHelper_zh_HANS', zh_CN.data, lang=get_language('zh_HANS'))
 
 
 def register():
-    if bpy.app.version < (4, 0, 0):
-        LatticeHelper_zh_CN.register()
-    else:
-        LatticeHelper_zh_HANS.register()
-        LatticeHelper_zh_CN.register()
+    LatticeHelper_zh_HANS.register()
 
 
 def unregister():
-    if bpy.app.version < (4, 0, 0):
-        LatticeHelper_zh_CN.unregister()
-    else:
-        LatticeHelper_zh_HANS.unregister()
-        LatticeHelper_zh_CN.unregister()
+    LatticeHelper_zh_CN.unregister()

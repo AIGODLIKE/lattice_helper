@@ -6,7 +6,6 @@ from mathutils import Matrix, Vector
 
 from ..utils import get_pref
 
-
 #   添加顶点组
 #   在编辑模式整体失效
 #   TODO 设置活动项为晶格父级 -编辑模式
@@ -24,6 +23,20 @@ from ..utils import get_pref
 
 #   编辑模式里面分块物体绑晶格
 #   其它是晶格为父级
+
+
+OBJECT_MODE_ITEMS = [
+    ('whole', 'Entirety', 'All selected objects as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
+    ('bound_box', 'Bounding Box', 'Use the bounding box of each selected object as a separate lattice'),
+]
+
+OBJECT_EDIT_MODE_ITEMS = [
+    *OBJECT_MODE_ITEMS,
+    ('select_block', 'Selection Block (Edit Mode)',
+     'Add a lattice for each selected block as a separate region within edit mode'),
+    ('whole_block', 'Entire Block (Edit Mode)',
+     'Add a lattice for all selected blocks within edit mode as a single region'),
+]
 
 
 def get_select_block(obj):
@@ -79,9 +92,29 @@ def parent_set(child: bpy.types.Object, parent: bpy.types.Object, reverse=False)
         child.matrix_parent_inverse = parent.matrix_world.inverted()
 
 
+def new_vertex_group(obj: bpy.types.Object, name=''):
+    vg_name = name + '_LP'
+
+    if vg_name not in obj.vertex_groups:
+        obj.vertex_groups.new(name=vg_name)
+
+
+def min_max_calc(vertices, mat, box, gtv=None):
+    if not gtv:
+        def gtv(v): return v
+    for v in vertices:
+        point = mat @ gtv(v)
+        for i in range(3):
+            if box[i][0] > point[i]:
+                box[i][0] = point[i]
+            if box[i][1] < point[i]:
+                box[i][1] = point[i]
+    return box
+
+
 class AddLattice(bpy.types.Operator):
     bl_idname = "lthp.op"
-    bl_label = "Lattice overlay"
+    bl_label = "Lattice Overlay"
     bl_description = "Automatically add a lattice to selected objects"
     bl_options = {"REGISTER", "UNDO"}
 
@@ -89,24 +122,26 @@ class AddLattice(bpy.types.Operator):
              ('KEY_CARDINAL', 'Cardinal', ''),
              ('KEY_CATMULL_ROM', 'Catmull-Rom', ''),
              ('KEY_BSPLINE', 'BSpline', '')]
-    axis: bpy.props.EnumProperty(name="Axis",
-                                 default="Global",
-                                 items=[("Local", "Local", ""),
-                                        ("Global", "Global", ""),
-                                        ("Cursor", "Cursor", "")])
+    axis: bpy.props.EnumProperty(
+        name="Axis",
+        default="Global",
+        items=[("Local", "Local", ""),
+               ("Global", "Global", ""),
+               ("Cursor", "Cursor", "")])
 
     def update(self, context):
         if self.edit_axis != self.axis:
             self.axis = self.edit_axis
 
-    edit_axis: bpy.props.EnumProperty(name="Axis",
-                                      default="Global",
-                                      items=[
-                                          # ("Local", "Local", ""),
-                                          ("Global", "Global", ""),
-                                          ("Cursor", "Cursor", "")
-                                      ],
-                                      update=update)
+    edit_axis: bpy.props.EnumProperty(
+        name="Axis",
+        default="Global",
+        items=[
+            # ("Local", "Local", ""),
+            ("Global", "Global", ""),
+            ("Cursor", "Cursor", "")
+        ],
+        update=update)
 
     set_parent: bpy.props.BoolProperty(
         default=True,
@@ -114,104 +149,46 @@ class AddLattice(bpy.types.Operator):
         description=
         'If in Object Mode, set the lattice as the parent of the object.If in lattice Editing Mode, set the active object as the parent of the lattice')
 
-    set_selected_objects_is_active_parent: bpy.props.BoolProperty(default=False,
-                                                                  name="Set the active item as the parent of other selected objects",
-                                                                  description='Set the active item as the parent of other selected objects',
-                                                                  options={'SKIP_SAVE'})
+    set_selected_objects_is_active_parent: bpy.props.BoolProperty(
+        default=False,
+        name="Set the active item as the parent of other selected objects",
+        description='Set the active item as the parent of other selected objects',
+        options={'SKIP_SAVE'})
 
     res: bpy.props.IntVectorProperty(name="Resolution", default=[2, 2, 2], min=2, max=64)
     lerp: bpy.props.EnumProperty(name="Interpolation", items=items)
-
-    obj_edit_mode_items = [
-        ('whole', 'Entirety', 'All selected vertices as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
-        ('bound_box', 'Bounding box', 'Use the bounding box of each selected object as a separate lattice'),
-        # ('individual', '各自', '每一个选择的物体作为一个单独的晶格'),
-        ('select_block', 'Selection block (edit mode)',
-         'Add a lattice for each selected block as a separate region within edit mode'),
-        ('whole_block', 'Entire block (edit mode)',
-         'Add a lattice for all selected blocks within edit mode as a single region'),
-    ]
 
     use_vert_group: bpy.props.BoolProperty(default=False, name="Specify a vertex group for the modifier",
                                            description='Generate a vertex group based on the selected mode',
                                            options={'SKIP_SAVE'})
 
-    obj_edit_mode: bpy.props.EnumProperty(default='bound_box', name="Mode", items=obj_edit_mode_items)
+    obj_edit_mode: bpy.props.EnumProperty(default='bound_box', name="Mode", items=OBJECT_EDIT_MODE_ITEMS)
 
-    obj_mode_items = [
-        ('whole', 'Entirety', 'All selected objects as a single entity'),  # 物体模式，所有选择作为一个整体， 编辑模式也是所有选择的内容作为一个整体
-        ('bound_box', 'Bounding box', 'Use the bounding box of each selected object as a separate lattice'),
-        # # ('individual', '各自', '每一个选择的物体作为一个单独的晶格'),
-        # ('select_block', '选择块(编辑模式)', '将编辑模式内每一个选择的块作为单独的一个区域添加一个晶格'),
-        # ('whole_block', '整个块(编辑模式)', '将编辑模式内所有选择的块作为一个区域添加晶格'),
-    ]
-
-    obj_mode: bpy.props.EnumProperty(default='bound_box', name="Mode", items=obj_mode_items)
+    obj_mode: bpy.props.EnumProperty(default='bound_box', name="Mode", items=OBJECT_MODE_ITEMS)
 
     def __init__(self) -> None:
+        self.selected_objects = None
+        self.active_object = None
+        self.data = {}
         pref = get_pref()
         self.res[:] = pref.def_res
         self.lerp = pref.lerp
 
         self.objects = {}
 
-    def min_max_calc(self, vertices, mat, box, gtv=None):
-        if not gtv:
-            def gtv(v): return v
-        for v in vertices:
-            point = mat @ gtv(v)
-            for i in range(3):
-                if box[i][0] > point[i]:
-                    box[i][0] = point[i]
-                if box[i][1] < point[i]:
-                    box[i][1] = point[i]
-        return box
-
     def box_get_common(self, o: bpy.types.Object, box, mat: Matrix):
         if self.axis == "Local":
-            # mat_ = o.rotation_euler.to_matrix().to_4x4().inverted() @ mat
             mat_ = Matrix.Translation(mat.to_translation()) @ Matrix.Diagonal(mat.to_scale()).to_4x4()
-            self.min_max_calc(o.bound_box, mat_, box, lambda v: Vector(v))
-            # for bpoint in o.bound_box:
-            #     bpoint = mat_ @ Vector(bpoint)
-            #     for i in range(3):
-            #         if box[i][0] > bpoint[i]:
-            #             box[i][0] = bpoint[i]
-            #         if box[i][1] < bpoint[i]:
-            #             box[i][1] = bpoint[i]
+            min_max_calc(o.bound_box, mat_, box, lambda v: Vector(v))
         elif self.axis == "Global":
-            # m.dot(nli.T).T
-            # import numpy as np
-            # npm = np.array(mat.to_3x3())
-            # nli = [None for _ in range(len(o.data.vertices) * 3)]
-            # o.data.vertices.foreach_get("co", nli)
-            # nli = np.array(nli).reshape(-1, 3)
-            # vertices = npm.dot(nli.T).T + mat.translation
-            # box[0][0], box[1][0], box[2][0] = vertices.min(axis=0)
-            # box[0][1], box[1][1], box[2][1] = vertices.max(axis=0)
-            # vertices.min(axis=1)
-            self.min_max_calc(o.data.vertices, mat, box, lambda v: v.co)
-            # for bpoint in o.data.vertices:
-            #     bpoint = mat @ bpoint.co
-            #     for i in range(3):
-            #         if box[i][0] > bpoint[i]:
-            #             box[i][0] = bpoint[i]
-            #         if box[i][1] < bpoint[i]:
-            #             box[i][1] = bpoint[i]
+            min_max_calc(o.data.vertices, mat, box, lambda v: v.co)
         else:
             mat = bpy.context.scene.cursor.rotation_euler.to_matrix().to_4x4().inverted() @ mat
-            self.min_max_calc(o.data.vertices, mat, box, lambda v: v.co)
-            # for bpoint in o.data.vertices:
-            #     bpoint = mat @ bpoint.co
-            #     for i in range(3):
-            #         if box[i][0] > bpoint[i]:
-            #             box[i][0] = bpoint[i]
-            #         if box[i][1] < bpoint[i]:
-            #             box[i][1] = bpoint[i]
+            min_max_calc(o.data.vertices, mat, box, lambda v: v.co)
 
     def box_get_bmesh(self, o: bpy.types.Object, box, mat: Matrix):
         import bmesh
-        verts = []
+        vertices_list = []
 
         def _calc(vertices, box, ):
             for v in vertices:
@@ -235,9 +212,8 @@ class AddLattice(bpy.types.Operator):
             elif self.axis == "Cursor":
                 mat = bpy.context.scene.cursor.rotation_euler.to_matrix().to_4x4().inverted() @ mat
             for b in A:
-                verts.append(mat @ b.co)
-
-        _calc(verts, box)
+                vertices_list.append(mat @ b.co)
+        _calc(vertices_list, box)
 
     def box_get(self, obj: bpy.types.Object, *, whole=False, get_block=False, get_whole_block=False):
         if whole:
@@ -274,14 +250,11 @@ class AddLattice(bpy.types.Operator):
 
             if obj not in self.objects:
                 self.objects[obj] = {}
-            # else:
-            #     return self.objects[o]
 
             if 'bound_box' not in self.objects[obj]:
                 self.objects[obj]['bound_box'] = {}
-            if obj.type == 'MESH':  # and obj.mode != 'OBJECT':#计算网格
+            if obj.type == 'MESH':  # 计算网格
                 import bmesh
-                # bm = bmesh.from_edit_mesh(o.data)
                 data = obj.data
                 if data.is_editmode:
                     # Gain direct access to the mesh
@@ -290,9 +263,9 @@ class AddLattice(bpy.types.Operator):
                     bm = bmesh.new()
                     bm.from_mesh(data)
 
-                self.objects[obj]['bound_box']['bound_box'] = self.min_max_calc(vertices=[v for v in bm.verts], mat=mat,
-                                                                                box=[[inf, -inf] for _ in range(3)],
-                                                                                gtv=lambda v: v.co)
+                self.objects[obj]['bound_box']['bound_box'] = min_max_calc(vertices=[v for v in bm.verts], mat=mat,
+                                                                           box=[[inf, -inf] for _ in range(3)],
+                                                                           gtv=lambda v: v.co)
 
                 if 'block' not in self.objects[obj]:
                     self.objects[obj]['block'] = {}
@@ -307,9 +280,9 @@ class AddLattice(bpy.types.Operator):
 
                     for v_ in v_block:
                         verts = [v for v in bm.verts if v.index in v_block[v_]]
-                        self.objects[obj]['bound_box']['block'][str(v_)] = self.min_max_calc(verts, mat,
-                                                                                             [[inf, -inf] for _ in
-                                                                                              range(3)], lambda v: v.co)
+                        self.objects[obj]['bound_box']['block'][str(v_)] = min_max_calc(verts, mat,
+                                                                                        [[inf, -inf] for _ in
+                                                                                         range(3)], lambda v: v.co)
 
                 if get_whole_block:
                     if 'whole_block' not in self.objects[obj]['bound_box']:
@@ -317,21 +290,15 @@ class AddLattice(bpy.types.Operator):
                     A = [v for v in bm.verts if v.select]
                     if len(A) <= 5:
                         A = [v for v in bm.verts]
-                    self.objects[obj]['bound_box']['whole_block'] = self.min_max_calc(A, mat,
-                                                                                      [[inf, -inf] for _ in range(3)],
-                                                                                      lambda v: v.co)
+                    self.objects[obj]['bound_box']['whole_block'] = min_max_calc(A, mat,
+                                                                                 [[inf, -inf] for _ in range(3)],
+                                                                                 lambda v: v.co)
                     self.objects[obj]['block']['whole_block'] = {i.index for i in A}
 
-            else:  #
-                self.objects[obj]['bound_box']['bound_box'] = self.min_max_calc(obj.bound_box, mat,
-                                                                                [[inf, -inf] for _ in range(3)],
-                                                                                lambda v: Vector(v))
-
-    def new_vg(self, obj: bpy.types.Object, name=''):
-        vg_name = name + '_LP'
-
-        if vg_name not in obj.vertex_groups:
-            obj.vertex_groups.new(name=vg_name)
+            else:
+                self.objects[obj]['bound_box']['bound_box'] = min_max_calc(obj.bound_box, mat,
+                                                                           [[inf, -inf] for _ in range(3)],
+                                                                           lambda v: Vector(v))
 
     def execute(self, context):
         support_type = ['LATTICE', "MESH", "CURVE", "FONT", "SURFACE", "HAIR", "GPENCIL"]
@@ -361,33 +328,33 @@ class AddLattice(bpy.types.Operator):
             self.report({"ERROR"}, f"Objects without selection to add lattices!!")
             return {"FINISHED"}
 
-        def new_vertex_groups(object, name, vertex_list):
+        def new_vertex_groups(obj, name, vertex_list):
             bpy.ops.object.mode_set(mode='OBJECT', )
             new_name = name + '_VG'
-            if new_name not in object.vertex_groups:
-                new = object.vertex_groups.new(name=new_name)
+            if new_name not in obj.vertex_groups:
+                new = obj.vertex_groups.new(name=new_name)
             else:
-                new = object.vertex_groups[new_name]
+                new = obj.vertex_groups[new_name]
             new.add(vertex_list, 1, 'ADD')
             bpy.ops.object.mode_set(mode='EDIT', )
             context.view_layer.update()
             return new.name
 
-        def new_lattices_modifder(object, name, modifder_target, vertex_list):
-            if object.type == 'GPENCIL':
-                mod = object.grease_pencil_modifiers.new(name=name, type="GP_LATTICE")
+        def new_lattices_modifier(obj, name, modifder_target, vertex_list):
+            if obj.type == 'GPENCIL':
+                mod = obj.grease_pencil_modifiers.new(name=name, type="GP_LATTICE")
             else:
-                mod = object.modifiers.new(name=name, type="LATTICE")
+                mod = obj.modifiers.new(name=name, type="LATTICE")
             if vertex_list != None:
-                mod.vertex_group = new_vertex_groups(object, name, vertex_list)
+                mod.vertex_group = new_vertex_groups(obj, name, vertex_list)
 
             mod.object = bpy.data.objects[modifder_target.name]
-            if self.set_parent: parent_set(object, bpy.data.objects[modifder_target.name],
+            if self.set_parent: parent_set(obj, bpy.data.objects[modifder_target.name],
                                            reverse=obj_edit_mode == 'select_block' or obj_edit_mode == 'whole_block'
                                            )
             context.view_layer.update()
 
-        def new_lattices_object(object, latticesname_name, scale, location, vertex_list: list = None):
+        def new_lattices_object(obj, latticesname_name, scale, location, vertex_list: list = None):
             lt = bpy.data.lattices.new(name=latticesname_name + '_LP')
             lpo = bpy.data.objects.new(name=lt.name, object_data=lt)
             bpy.context.collection.objects.link(lpo)
@@ -400,13 +367,13 @@ class AddLattice(bpy.types.Operator):
 
             if self.axis == "Local":
                 if bpy.context.mode == 'EDIT':
-                    lpo.rotation_euler = object.rotation_euler
-                    lpo.location = object.rotation_euler.to_matrix().to_4x4() @ location
+                    lpo.rotation_euler = obj.rotation_euler
+                    lpo.location = obj.rotation_euler.to_matrix().to_4x4() @ location
                     lpo.scale = scale
                 else:
-                    mat = object.matrix_world
+                    mat = obj.matrix_world
                     mat_ = Matrix.Translation(mat.to_translation()) @ Matrix.Diagonal(mat.to_scale()).to_4x4()
-                    lpo.rotation_euler = object.rotation_euler
+                    lpo.rotation_euler = obj.rotation_euler
                     lpo.scale = scale
                     lpo.location = location
 
@@ -416,7 +383,7 @@ class AddLattice(bpy.types.Operator):
 
             lt.interpolation_type_u = lt.interpolation_type_v = lt.interpolation_type_w = self.lerp
             lt.points_u, lt.points_v, lt.points_w = self.res
-            new_lattices_modifder(object, lpo.name, lpo, vertex_list=vertex_list)
+            new_lattices_modifier(obj, lpo.name, lpo, vertex_list=vertex_list)
 
             context.view_layer.update()
 
@@ -426,14 +393,13 @@ class AddLattice(bpy.types.Operator):
                 self.box_get_bmesh(selected_objects, box, mat)
 
             elif o.type != "MESH":
-                self.min_max_calc(o.bound_box, mat, box, lambda v: Vector(v))
+                min_max_calc(o.bound_box, mat, box, lambda v: Vector(v))
             elif o.type == "MESH":
                 self.box_get_common(o, box, mat)
             return box
 
         if (obj_edit_mode == 'whole' and is_edit_mesh_mode) or (obj_mode == 'whole' and is_object_mode):
             box = [[inf, -inf] for i in range(3)]
-            self.data = {}
 
             for obj in selected_objects:
                 context.view_layer.update()
@@ -447,7 +413,7 @@ class AddLattice(bpy.types.Operator):
             lpo.scale = scale
             if self.axis == "Cursor":
                 lpo.rotation_euler = bpy.context.scene.cursor.matrix.to_euler()
-                location = bpy.context.scene.cursor.rotation_euler.to_matrix() @ Vector(location)
+                location = context.scene.cursor.rotation_euler.to_matrix() @ Vector(location)
             lpo.location = location
             lt.interpolation_type_u = lt.interpolation_type_v = lt.interpolation_type_w = self.lerp
             lt.points_u, lt.points_v, lt.points_w = self.res
@@ -465,7 +431,7 @@ class AddLattice(bpy.types.Operator):
 
                     if context.mode == "EDIT_MESH":
                         vg_name = mod.name + '_LP'
-                        self.new_vg(obj=o, name=mod.name)
+                        new_vertex_group(obj=o, name=mod.name)
                         o.vertex_groups.active = o.vertex_groups.get(vg_name)
                         context.view_layer.objects.active = o
                         bpy.ops.object.vertex_group_assign()

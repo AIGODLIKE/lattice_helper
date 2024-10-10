@@ -1,9 +1,9 @@
 bl_info = {
-    "name": "LatticeHelper",
+    "name": "Lattice Helper",
     'author': 'AIGODLIKE Community: 会飞的键盘侠,小萌新',
     'version': (1, 2, 1),
     'blender': (2, 90, 0),
-    'location': '3DView -> LatticeHelper',
+    'location': '3DView -> Context Menu -> LatticeHelper',
     'category': 'AIGODLIKE',
 }
 

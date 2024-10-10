@@ -281,6 +281,11 @@ class AddLattice(bpy.types.Operator):
                                                                            [[inf, -inf] for _ in range(3)],
                                                                            lambda v: Vector(v))
 
+    def invoke(self, context, event):
+        if context.mode == "EDIT_MESH":
+            self.obj_edit_mode = "select_block"
+        return self.execute(context)
+
     def execute(self, context):
         support_type = ['LATTICE', "MESH", "CURVE", "FONT", "SURFACE", "HAIR", "GPENCIL"]
         self.active_object = context.active_object  # 实例当前活动物体出来备用  添加顶点组用

@@ -7,5 +7,5 @@ maintainer = "AIGODLIKE Community(会飞的键盘侠,小萌新)"
 name = "Lattice Helper"
 tagline = "Add matching lattices to a single or multiple objects in object or editing mode"
 type = "add-on"
-version = "1.2.2"
+version = "1.2.3"
 tags = ["3D View", "Modeling", "Mesh", "Object"]

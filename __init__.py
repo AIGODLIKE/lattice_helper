@@ -6,7 +6,7 @@ bl_info = {
     "version": (1, 2, 3),
     "blender": (2, 90, 0),
     "location": "3DView -> Context Menu -> LatticeHelper",
-    "description": "Add matching lattices to a single or multiple objects in object or editing mode",
+    "description": "Apply Lattice modifier to object(s) in object/edit mode",
     "category": "AIGODLIKE",
 }
 

@@ -33,5 +33,6 @@ data = {
     'Delete the vertex group used by the lattice modifier, and simultaneously remove the vertex group used by the lattice modifier when applying or deleting it': '删除晶格修改器使用的顶点组,在应用或删除晶格修改器时同时删除晶格修改器所使用的顶点组',
     'skip applying the modifier': '跳过应用修改器',
     'type not supported for applying lattice modifier': '类型不支持应用晶格修改器',
-    '3DView -> Context Menu -> LatticeHelper': '3D视图 -> 上下文菜单 -> 晶格助手'
+    '3DView -> Context Menu -> LatticeHelper': '3D视图 -> 上下文菜单 -> 晶格助手',
+    "Add matching lattices to a single or multiple objects in object or editing mode": "在对象或编辑模式下为单个或多个对象添加匹配晶格"
 }

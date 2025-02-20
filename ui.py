@@ -3,12 +3,24 @@ import bpy
 from .ops import AddLattice, ApplyLattice  # ,Remove_Lattice_Operator
 
 
+def draw_add(context: bpy.types.Context, layout: bpy.types.UILayout):
+    ops = layout.operator(AddLattice.bl_idname)
+    if context.mode == "OBJECT":
+        select = len(context.selected_objects)
+        if select == 1:
+            ops.axis = "Local"
+            ops.obj_mode = "bound_box"
+        else:
+            ops.axis = "Global"
+            ops.obj_mode = "whole"
+
+
 class LATTICE_H_MT_Menus(bpy.types.Menu):
     bl_label = "Lattice Helper"
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(AddLattice.bl_idname)
+        draw_add(context, layout)
         layout.operator(ApplyLattice.bl_idname, text='Apply lattice').mode = 'apply_lattice'
         layout.operator(ApplyLattice.bl_idname, text='Delete lattice').mode = 'del_lattice'
 
@@ -31,9 +43,7 @@ def menu_draw_func(self, context):
     if is_have_lattice_mod:
         self.layout.column().menu("LATTICE_H_MT_Menus", icon='MOD_LATTICE', )
     else:
-        ops = self.layout.column().operator(AddLattice.bl_idname)
-        if context.mode == "OBJECT":
-            ops.obj_mode = "whole"
+        draw_add(context, self.layout)
     self.layout.separator()
 
 

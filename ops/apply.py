@@ -80,48 +80,53 @@ class ApplyLattice(bpy.types.Operator):
         tmp_del_obj_dict = {}
 
         def try_apple_lattice(obj: bpy.types.Object, mod: bpy.types.Modifier):
-            lattice_objects_list = {obj for obj in selected_objects if obj.type == "LATTICE"}
-            if mod.type in ("GP_LATTICE", "LATTICE") and mod.object is not None:
+            if mod.type in ("GP_LATTICE", "LATTICE", "GREASE_PENCIL_LATTICE") and mod.object is not None:
                 if obj.type in SUPPORT_TYPE:
-                    if mod.object in lattice_objects_list:
-                        context.view_layer.objects.active = obj
-                        tmp_del_vg = None
+                    context.view_layer.objects.active = obj
+                    tmp_del_vg = None
 
-                        if self.del_lattice:
-                            if mod.object not in tmp_del_obj_dict:
-                                tmp_del_obj_dict[mod.object] = []
+                    if self.del_lattice:
+                        if mod.object not in tmp_del_obj_dict:
+                            tmp_del_obj_dict[mod.object] = []
+                        if obj not in tmp_del_obj_dict[mod.object]:
+                            tmp_del_obj_dict[mod.object].append(obj)
 
-                            if obj not in tmp_del_obj_dict[mod.object]:
-                                tmp_del_obj_dict[mod.object].append(obj)
+                    if self.del_vertex_groups and obj.type == "MESH" and mod.vertex_group in obj.vertex_groups:
+                        tmp_del_vg = mod.vertex_group
 
-                        if mod.vertex_group in obj.vertex_groups and self.del_vertex_groups:
-                            tmp_del_vg = mod.vertex_group
+                    if self.mode == "APPLY_LATTICE":
+                        apple_lattice_modifier(self, obj, mod)
 
-                        if self.mode == "APPLY_LATTICE":
-                            apple_lattice_modifier(self, obj, mod)
+                    elif self.mode == "ONLY_DEL_LATTICE":
+                        remove_lattice_modifier(self, obj, mod)
 
-                        elif self.mode == "ONLY_DEL_LATTICE":
+                    elif self.mode == "MODIFIER_APPLY_AS_SHAPEKEY":
+                        if obj.type == "MESH":
+                            bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=False, modifier=mod.name)
+                        else:
                             remove_lattice_modifier(self, obj, mod)
 
-                        elif self.mode == "MODIFIER_APPLY_AS_SHAPEKEY" and obj.type not in GP_TYPES:
-                            bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=False, modifier=mod.name)
-
-                        elif self.mode == "KEEP_MODIFIER_APPLY_AS_SHAPEKEY" and obj.type not in GP_TYPES:
+                    elif self.mode == "KEEP_MODIFIER_APPLY_AS_SHAPEKEY":
+                        if obj.type == "MESH":
                             bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=True, modifier=mod.name)
+                        if self.del_lattice:
+                            remove_lattice_modifier(self, obj, mod)
 
-                        if obj.type == "MESH" and tmp_del_vg is not None:
-                            if self.del_vertex_groups and tmp_del_vg in obj.vertex_groups:
-                                obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
+                    if obj.type == "MESH" and tmp_del_vg is not None:
+                        if self.del_vertex_groups and tmp_del_vg in obj.vertex_groups:
+                            obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
 
         if "LATTICE" in {obj.type for obj in selected_objects}:
+            lattice_objects_list = {obj for obj in selected_objects if obj.type == "LATTICE"}
             for obj in context.scene.objects:
                 for mod in get_modifiers(obj):
-                    try_apple_lattice(obj, mod)
+                    if getattr(mod, "object", None) in lattice_objects_list:
+                        try_apple_lattice(obj, mod)
                 context.view_layer.update()
         else:
             for obj in selected_objects:
                 for mod in get_modifiers(obj):
-                    if mod.type in ("GP_LATTICE", "LATTICE") and mod.object is not None:
+                    if mod.type in ("GP_LATTICE", "LATTICE", "GREASE_PENCIL_LATTICE") and mod.object is not None:
                         try_apple_lattice(obj, mod)
                 context.view_layer.update()
 

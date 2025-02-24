@@ -342,6 +342,7 @@ class AddLattice(bpy.types.Operator):
                     reverse=add_lattice_edit_mode == "SELECT_BLOCK" or add_lattice_edit_mode == "WHOLE_BLOCK"
                 )
             context.view_layer.update()
+            return modifier
 
         def new_lattices_object(obj, lattice_name, scale, location, vertex_list: list = None):
             lt = bpy.data.lattices.new(name=lattice_name + "_LP")
@@ -409,7 +410,7 @@ class AddLattice(bpy.types.Operator):
             for obj in selected_objects:
                 context.view_layer.update()
                 if obj.type in support_type:
-                    new_lattices_modifier(obj, "Group_LP", lattice_object, None)
+                    mod = new_lattices_modifier(obj, "Group_LP", lattice_object, None)
 
                     if context.mode == "EDIT_MESH":
                         vg_name = mod.name + "_LP"

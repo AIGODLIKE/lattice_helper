@@ -8,4 +8,4 @@ name = "Lattice Helper"
 tagline = "Apply Lattice modifier to object(s) in object/edit mode"
 type = "add-on"
 version = "1.2.4"
-tags = ["3D View", "Modeling", "Mesh", "Object"]
+tags = ["Modeling", "Mesh", "Object"]

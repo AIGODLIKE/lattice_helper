@@ -7,5 +7,5 @@ maintainer = "AIGODLIKE Community(会飞的键盘侠,小萌新)"
 name = "Lattice Helper"
 tagline = "Apply Lattice modifier to object(s) in object/edit mode"
 type = "add-on"
-version = "1.2.4"
+version = "1.2.5"
 tags = ["Modeling", "Mesh", "Object"]

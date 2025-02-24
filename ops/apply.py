@@ -80,6 +80,7 @@ class ApplyLattice(bpy.types.Operator):
         tmp_del_obj_dict = {}
 
         def try_apple_lattice(obj: bpy.types.Object, mod: bpy.types.Modifier):
+            lattice_objects_list = {obj for obj in selected_objects if obj.type == "LATTICE"}
             if mod.type in ("GP_LATTICE", "LATTICE") and mod.object is not None:
                 if obj.type in SUPPORT_TYPE:
                     if mod.object in lattice_objects_list:
@@ -113,7 +114,6 @@ class ApplyLattice(bpy.types.Operator):
                                 obj.vertex_groups.remove(obj.vertex_groups[tmp_del_vg])
 
         if "LATTICE" in {obj.type for obj in selected_objects}:
-            lattice_objects_list = {obj for obj in selected_objects if obj.type == "LATTICE"}
             for obj in context.scene.objects:
                 for mod in get_modifiers(obj):
                     try_apple_lattice(obj, mod)

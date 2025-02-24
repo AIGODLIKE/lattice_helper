@@ -388,7 +388,7 @@ class AddLattice(bpy.types.Operator):
 
         if (add_lattice_edit_mode == "WHOLE" and is_edit_mesh_mode) or (
                 add_lattice_object_mode == "WHOLE" and is_object_mode):
-            box = [[inf, -inf] for i in range(3)]
+            box = 3 * [[inf, -inf]]
 
             for obj in selected_objects:
                 context.view_layer.update()
